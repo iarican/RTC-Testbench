@@ -77,15 +77,15 @@ sub plot
     print $fh "set yrange [0.8:*];\n";
     print $fh "set grid back;\n";
     print $fh "plot ";
-    print $fh "'data.txt' using 1:2 with fsteps title 'TsnHigh', " if $tsn_high;
-    print $fh "'data.txt' using 1:3 with fsteps title 'TsnLow', " if $tsn_low;
-    print $fh "'data.txt' using 1:4 with fsteps title 'Rtc', " if $rtc;
-    print $fh "'data.txt' using 1:5 with fsteps title 'Rta', " if $rta;
-    print $fh "'data.txt' using 1:6 with fsteps title 'Dcp', " if $dcp;
-    print $fh "'data.txt' using 1:7 with fsteps title 'Lldp', " if $lldp;
-    print $fh "'data.txt' using 1:8 with fsteps title 'UdpHigh', " if $udp_high;
-    print $fh "'data.txt' using 1:9 with fsteps title 'UdpLow', " if $udp_low;
-    print $fh "'data.txt' using 1:10 with fsteps title 'GenericL2', " if $g2;
+    print $fh "'data.txt' using 1:2 with fsteps lw 3 title 'TsnHigh', " if $tsn_high;
+    print $fh "'data.txt' using 1:3 with fsteps lw 3 title 'TsnLow', " if $tsn_low;
+    print $fh "'data.txt' using 1:4 with fsteps lw 3 title 'Rtc', " if $rtc;
+    print $fh "'data.txt' using 1:5 with fsteps lw 3 title 'Rta', " if $rta;
+    print $fh "'data.txt' using 1:6 with fsteps lw 3 title 'Dcp', " if $dcp;
+    print $fh "'data.txt' using 1:7 with fsteps lw 3 title 'Lldp', " if $lldp;
+    print $fh "'data.txt' using 1:8 with fsteps lw 3 title 'UdpHigh', " if $udp_high;
+    print $fh "'data.txt' using 1:9 with fsteps lw 3 title 'UdpLow', " if $udp_low;
+    print $fh "'data.txt' using 1:10 with fsteps lw 3 title 'GenericL2', " if $g2;
     print $fh ";\n";
     close($fh);
 
