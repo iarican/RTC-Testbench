@@ -57,6 +57,11 @@ const char *stat_frame_type_names[NUM_FRAME_TYPES] = {
  */
 #define STAT_MAX_BACKLOG 1024
 
+/*
+ * If SIGUSR1 signal is received, reset the global statistics.
+ */
+volatile sig_atomic_t reset_stats = 0;
+
 static void stat_reset(struct statistics *stats)
 {
 	memset(stats, 0, sizeof(struct statistics));
@@ -169,6 +174,13 @@ void stat_update(void)
 		stat_reset(&statistics_per_period[i]);
 #endif
 	pthread_mutex_unlock(&global_statistics_mutex);
+
+	/* Perform reset of global statistics if requested by user. */
+	if (reset_stats) {
+		for (int i = 0; i < NUM_FRAME_TYPES; i++)
+			stat_reset(&global_statistics[i]);
+		reset_stats = 0;
+	}
 }
 
 void stat_get_global_stats(struct statistics *stats, size_t len)

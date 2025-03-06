@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-2-Clause
 /*
- * Copyright (C) 2020-2024 Linutronix GmbH
+ * Copyright (C) 2020-2025 Linutronix GmbH
  * Author Kurt Kanzenbach <kurt@linutronix.de>
  */
 
@@ -61,17 +61,28 @@ static void term_handler(int sig)
 			threads[i].stop = 1;
 }
 
+static void reset_stats_handler(int sig)
+{
+	reset_stats = 1;
+}
+
 static void setup_signals(void)
 {
-	struct sigaction sa;
+	struct sigaction sa1, sa2;
 
-	sigemptyset(&sa.sa_mask);
-	sa.sa_handler = term_handler;
-	sa.sa_flags = 0;
+	sigemptyset(&sa1.sa_mask);
+	sa1.sa_handler = term_handler;
+	sa1.sa_flags = 0;
 
-	if (sigaction(SIGTERM, &sa, NULL))
+	sigemptyset(&sa2.sa_mask);
+	sa2.sa_handler = reset_stats_handler;
+	sa2.sa_flags = 0;
+
+	if (sigaction(SIGTERM, &sa1, NULL))
 		perror("sigaction() failed");
-	if (sigaction(SIGINT, &sa, NULL))
+	if (sigaction(SIGINT, &sa1, NULL))
+		perror("sigaction() failed");
+	if (sigaction(SIGUSR1, &sa2, NULL))
 		perror("sigaction() failed");
 }
 

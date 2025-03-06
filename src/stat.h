@@ -1,12 +1,13 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (C) 2021-2024 Linutronix GmbH
+ * Copyright (C) 2021-2025 Linutronix GmbH
  * Author Kurt Kanzenbach <kurt@linutronix.de>
  */
 
 #ifndef _STAT_H_
 #define _STAT_H_
 
+#include <signal.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -85,5 +86,7 @@ void stat_frame_received(enum stat_frame_type frame_type, uint64_t cycle_number,
 void stat_update(void);
 void stat_get_global_stats(struct statistics *stats, size_t len);
 void stat_get_stats_per_period(struct statistics *stats, size_t len);
+
+extern volatile sig_atomic_t reset_stats;
 
 #endif /* _STAT_H_ */
