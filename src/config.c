@@ -29,20 +29,12 @@
 
 struct application_config app_config;
 
-bool config_is_traffic_class_active(const char *traffic_class)
-{
-	enum stat_frame_type type = config_opt_to_type(traffic_class);
-
-	return app_config.classes[type].enabled &&
-	       app_config.classes[type].num_frames_per_cycle > 0;
-}
-
 static bool str_match_second(const char *opt, const char *s)
 {
 	return !strncmp(opt, s, strlen(s));
 }
 
-enum stat_frame_type config_opt_to_type(const char *opt)
+static enum stat_frame_type config_opt_to_type(const char *opt)
 {
 	if (str_match_second(opt, "TsnHigh"))
 		return TSN_HIGH_FRAME_TYPE;
@@ -68,7 +60,15 @@ enum stat_frame_type config_opt_to_type(const char *opt)
 	return NUM_FRAME_TYPES;
 }
 
-int config_parse_bool(const char *value, bool *ret)
+bool config_is_traffic_class_active(const char *traffic_class)
+{
+	enum stat_frame_type type = config_opt_to_type(traffic_class);
+
+	return app_config.classes[type].enabled &&
+	       app_config.classes[type].num_frames_per_cycle > 0;
+}
+
+static int config_parse_bool(const char *value, bool *ret)
 {
 	if (!strcmp(value, "0") || !strcasecmp(value, "false"))
 		*ret = false;
@@ -80,7 +80,7 @@ int config_parse_bool(const char *value, bool *ret)
 	return 0;
 }
 
-int config_parse_int(const char *value, long *ret)
+static int config_parse_int(const char *value, long *ret)
 {
 	char *endptr;
 
@@ -91,7 +91,7 @@ int config_parse_int(const char *value, long *ret)
 	return 0;
 }
 
-int config_parse_ulong(const char *value, unsigned long long *ret)
+static int config_parse_ulong(const char *value, unsigned long long *ret)
 {
 	char *endptr;
 

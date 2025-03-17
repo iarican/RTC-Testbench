@@ -128,11 +128,6 @@ void config_print_values(void);
 bool config_sanity_check(void);
 void config_free(void);
 
-enum stat_frame_type config_opt_to_type(const char *opt);
-int config_parse_bool(const char *value, bool *ret);
-int config_parse_int(const char *value, long *ret);
-int config_parse_ulong(const char *value, unsigned long long *ret);
-
 #define CONFIG_STORE_BOOL_PARAM_CLASS(name, var)                                                   \
 	do {                                                                                       \
 		if (!strcmp(key, #name)) {                                                         \
