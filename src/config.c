@@ -801,7 +801,7 @@ int config_set_defaults(bool mirror_enabled)
 	static unsigned char default_lldp_destination[] = {0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e};
 	static unsigned char default_destination[] = {0xa8, 0xa1, 0x59, 0x2c, 0xa8, 0xdb};
 	static unsigned char default_dcp_identify[] = {0x01, 0x0e, 0xcf, 0x00, 0x00, 0x00};
-	static const char *default_log_via_mqtt_measurement_name = "testbench";
+	static const char *default_log_via_mqtt_measurement_name = "reference";
 	static const char *default_udp_low_destination = "192.168.2.120";
 	static const char *default_log_via_mqtt_broker_ip = "127.0.0.1";
 	static const char *default_udp_low_source = "192.168.2.119";
