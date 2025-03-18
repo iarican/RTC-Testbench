@@ -51,7 +51,7 @@ Once Debian is and up and running the Linux RealTime Communication Testbench and
    apt update
    apt install -y build-essential clang llvm cmake pkg-config \
       libbpf-dev libyaml-dev libc6-dev rt-tests ethtool iproute2 \
-      iperf3 linuxptp libxdp-dev libssl-dev libmosquitto-dev git
+      iperf3 linuxptp libxdp-dev libssl-dev libmosquitto-dev git bc
 
    # Install Linux RealTime Communication Testbench
    git clone https://www.github.com/Linutronix/RTC-Testbench
