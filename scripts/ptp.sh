@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) 2021 Linutronix GmbH
+# Copyright (C) 2021,2025 Linutronix GmbH
 # Author Kurt Kanzenbach <kurt@linutronix.de>
 #
 # SPDX-License-Identifier: BSD-2-Clause
@@ -19,6 +19,9 @@ INTERFACE=$1
 # Kill already running daemons
 pkill ptp4l || true
 pkill phc2sys || true
+
+# Set NTP time into PHC
+phc_ctl ${INTERFACE} set
 
 # Stop ntpd
 systemctl stop systemd-timesyncd || true
