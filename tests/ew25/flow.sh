@@ -33,6 +33,11 @@ modprobe sch_etf || true
 echo 1 >/sys/class/net/${INTERFACE}/threaded
 
 #
+# Disable VLAN Rx offload.
+#
+ethtool -K ${INTERFACE} rx-vlan-offload off
+
+#
 # Reduce link speed. The i225/i226 uses 2.5 Gbit/s per default.
 #
 ethtool -s ${INTERFACE} speed 1000 autoneg on duplex full

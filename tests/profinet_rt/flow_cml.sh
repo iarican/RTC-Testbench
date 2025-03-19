@@ -29,6 +29,11 @@ modprobe sch_taprio || true
 echo 1 >/sys/class/net/${INTERFACE}/threaded
 
 #
+# Disable VLAN Rx offload.
+#
+ethtool -K ${INTERFACE} rx-vlan-offload off
+
+#
 # Reduce link speed.
 #
 ethtool -s ${INTERFACE} speed 1000 autoneg on duplex full

@@ -35,6 +35,11 @@ echo 10 >/sys/class/net/${INTERFACE}/napi_defer_hard_irqs
 echo ${GRO_FLUSH_TIMEOUT} >/sys/class/net/${INTERFACE}/gro_flush_timeout
 
 #
+# Disable VLAN Rx offload.
+#
+ethtool -K ${INTERFACE} rx-vlan-offload off
+
+#
 # Reduce link speed.
 #
 ethtool -s ${INTERFACE} speed 1000 autoneg on duplex full
