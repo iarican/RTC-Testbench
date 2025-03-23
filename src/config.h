@@ -206,17 +206,26 @@ void config_free(void);
 		}                                                                                  \
 	} while (0)
 
-#define CONFIG_STORE_ULONG_PARAM(name, var)                                                        \
+#define CONFIG_STORE_TIME_PARAM_CLASS(name, var)                                                   \
 	do {                                                                                       \
 		if (!strcmp(key, #name)) {                                                         \
-			unsigned long long result;                                                 \
+			enum stat_frame_type type = config_opt_to_type(#name);                     \
                                                                                                    \
-			if (config_parse_ulong(value, &result)) {                                  \
+			if (config_parse_time(value, &app_config.classes[type].var)) {             \
 				ret = -ERANGE;                                                     \
 				fprintf(stderr, "The value for " #name " is invalid!\n");          \
 				goto err_parse;                                                    \
-			} else {                                                                   \
-				app_config.var = result;                                           \
+			}                                                                          \
+		}                                                                                  \
+	} while (0)
+
+#define CONFIG_STORE_TIME_PARAM(name, var)                                                         \
+	do {                                                                                       \
+		if (!strcmp(key, #name)) {                                                         \
+			if (config_parse_time(value, &app_config.var)) {                           \
+				ret = -ERANGE;                                                     \
+				fprintf(stderr, "The value for " #name " is invalid!\n");          \
+				goto err_parse;                                                    \
 			}                                                                          \
 		}                                                                                  \
 	} while (0)

@@ -21,6 +21,8 @@
 #include "stat.h"
 
 /* timing */
+#define MSEC_PER_SEC 1000
+#define USEC_PER_SEC 1000000
 #define NSEC_PER_SEC 1000000000LL
 
 static inline void ns_to_ts(int64_t ns, struct timespec *ts)

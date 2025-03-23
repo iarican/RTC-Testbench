@@ -102,6 +102,48 @@ static int config_parse_ulong(const char *value, unsigned long long *ret)
 	return 0;
 }
 
+static int config_parse_time(const char *value, uint64_t *ret)
+{
+	unsigned long long tmp;
+	char *endptr;
+
+	tmp = strtoull(value, &endptr, 10);
+	if (errno != 0 || endptr == value)
+		return -ERANGE;
+
+	/* Nanoseconds without unit. */
+	if (*endptr == '\0') {
+		*ret = tmp;
+		return 0;
+	}
+
+	/* Seconds */
+	if (!strcmp(endptr, "s")) {
+		if (__builtin_mul_overflow(tmp, NSEC_PER_SEC, &tmp))
+			return -ERANGE;
+		*ret = tmp;
+		return 0;
+	}
+
+	/* Milliseconds */
+	if (!strcmp(endptr, "ms")) {
+		if (__builtin_mul_overflow(tmp, USEC_PER_SEC, &tmp))
+			return -ERANGE;
+		*ret = tmp;
+		return 0;
+	}
+
+	/* Microseconds */
+	if (!strcmp(endptr, "us")) {
+		if (__builtin_mul_overflow(tmp, MSEC_PER_SEC, &tmp))
+			return -ERANGE;
+		*ret = tmp;
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
 /* The configuration file is YAML based. Use libyaml to parse it. */
 int config_read_from_file(const char *config_file)
 {
@@ -166,14 +208,14 @@ int config_read_from_file(const char *config_file)
 
 			/* Switch value */
 			CONFIG_STORE_CLOCKID_PARAM(ApplicationClockId, application_clock_id);
-			CONFIG_STORE_ULONG_PARAM(ApplicationBaseCycleTimeNS,
-						 application_base_cycle_time_ns);
-			CONFIG_STORE_ULONG_PARAM(ApplicationBaseStartTimeNS,
-						 application_base_start_time_ns);
-			CONFIG_STORE_ULONG_PARAM(ApplicationTxBaseOffsetNS,
-						 application_tx_base_offset_ns);
-			CONFIG_STORE_ULONG_PARAM(ApplicationRxBaseOffsetNS,
-						 application_rx_base_offset_ns);
+			CONFIG_STORE_TIME_PARAM(ApplicationBaseCycleTimeNS,
+						application_base_cycle_time_ns);
+			CONFIG_STORE_TIME_PARAM(ApplicationBaseStartTimeNS,
+						application_base_start_time_ns);
+			CONFIG_STORE_TIME_PARAM(ApplicationTxBaseOffsetNS,
+						application_tx_base_offset_ns);
+			CONFIG_STORE_TIME_PARAM(ApplicationRxBaseOffsetNS,
+						application_rx_base_offset_ns);
 			CONFIG_STORE_STRING_PARAM(ApplicationXdpProgram, application_xdp_program);
 
 			CONFIG_STORE_BOOL_PARAM_CLASS(TsnHighEnabled, enabled);
@@ -184,7 +226,7 @@ int config_read_from_file(const char *config_file)
 			CONFIG_STORE_BOOL_PARAM_CLASS(TsnHighXdpBusyPollMode, xdp_busy_poll_mode);
 			CONFIG_STORE_BOOL_PARAM_CLASS(TsnHighTxTimeEnabled, tx_time_enabled);
 			CONFIG_STORE_BOOL_PARAM_CLASS(TsnHighIgnoreRxErrors, ignore_rx_errors);
-			CONFIG_STORE_ULONG_PARAM_CLASS(TsnHighTxTimeOffsetNS, tx_time_offset_ns);
+			CONFIG_STORE_TIME_PARAM_CLASS(TsnHighTxTimeOffsetNS, tx_time_offset_ns);
 			CONFIG_STORE_INT_PARAM_CLASS(TsnHighVid, vid);
 			CONFIG_STORE_INT_PARAM_CLASS(TsnHighPcp, pcp);
 			CONFIG_STORE_ULONG_PARAM_CLASS(TsnHighNumFramesPerCycle,
@@ -215,7 +257,7 @@ int config_read_from_file(const char *config_file)
 			CONFIG_STORE_BOOL_PARAM_CLASS(TsnLowXdpBusyPollMode, xdp_busy_poll_mode);
 			CONFIG_STORE_BOOL_PARAM_CLASS(TsnLowTxTimeEnabled, tx_time_enabled);
 			CONFIG_STORE_BOOL_PARAM_CLASS(TsnLowIgnoreRxErrors, ignore_rx_errors);
-			CONFIG_STORE_ULONG_PARAM_CLASS(TsnLowTxTimeOffsetNS, tx_time_offset_ns);
+			CONFIG_STORE_TIME_PARAM_CLASS(TsnLowTxTimeOffsetNS, tx_time_offset_ns);
 			CONFIG_STORE_INT_PARAM_CLASS(TsnLowVid, vid);
 			CONFIG_STORE_INT_PARAM_CLASS(TsnLowPcp, pcp);
 			CONFIG_STORE_ULONG_PARAM_CLASS(TsnLowNumFramesPerCycle,
@@ -273,7 +315,7 @@ int config_read_from_file(const char *config_file)
 			CONFIG_STORE_BOOL_PARAM_CLASS(RtaIgnoreRxErrors, ignore_rx_errors);
 			CONFIG_STORE_INT_PARAM_CLASS(RtaVid, vid);
 			CONFIG_STORE_INT_PARAM_CLASS(RtaPcp, pcp);
-			CONFIG_STORE_ULONG_PARAM_CLASS(RtaBurstPeriodNS, burst_period_ns);
+			CONFIG_STORE_TIME_PARAM_CLASS(RtaBurstPeriodNS, burst_period_ns);
 			CONFIG_STORE_ULONG_PARAM_CLASS(RtaNumFramesPerCycle, num_frames_per_cycle);
 			CONFIG_STORE_STRING_PARAM_CLASS(RtaPayloadPattern, payload_pattern);
 			CONFIG_STORE_ULONG_PARAM_CLASS(RtaFrameLength, frame_length);
@@ -296,7 +338,7 @@ int config_read_from_file(const char *config_file)
 			CONFIG_STORE_BOOL_PARAM_CLASS(DcpIgnoreRxErrors, ignore_rx_errors);
 			CONFIG_STORE_INT_PARAM_CLASS(DcpVid, vid);
 			CONFIG_STORE_INT_PARAM_CLASS(DcpPcp, pcp);
-			CONFIG_STORE_ULONG_PARAM_CLASS(DcpBurstPeriodNS, burst_period_ns);
+			CONFIG_STORE_TIME_PARAM_CLASS(DcpBurstPeriodNS, burst_period_ns);
 			CONFIG_STORE_ULONG_PARAM_CLASS(DcpNumFramesPerCycle, num_frames_per_cycle);
 			CONFIG_STORE_STRING_PARAM_CLASS(DcpPayloadPattern, payload_pattern);
 			CONFIG_STORE_ULONG_PARAM_CLASS(DcpFrameLength, frame_length);
@@ -312,7 +354,7 @@ int config_read_from_file(const char *config_file)
 
 			CONFIG_STORE_BOOL_PARAM_CLASS(LldpEnabled, enabled);
 			CONFIG_STORE_BOOL_PARAM_CLASS(LldpIgnoreRxErrors, ignore_rx_errors);
-			CONFIG_STORE_ULONG_PARAM_CLASS(LldpBurstPeriodNS, burst_period_ns);
+			CONFIG_STORE_TIME_PARAM_CLASS(LldpBurstPeriodNS, burst_period_ns);
 			CONFIG_STORE_ULONG_PARAM_CLASS(LldpNumFramesPerCycle, num_frames_per_cycle);
 			CONFIG_STORE_STRING_PARAM_CLASS(LldpPayloadPattern, payload_pattern);
 			CONFIG_STORE_ULONG_PARAM_CLASS(LldpFrameLength, frame_length);
@@ -328,7 +370,7 @@ int config_read_from_file(const char *config_file)
 
 			CONFIG_STORE_BOOL_PARAM_CLASS(UdpHighEnabled, enabled);
 			CONFIG_STORE_BOOL_PARAM_CLASS(UdpHighIgnoreRxErrors, ignore_rx_errors);
-			CONFIG_STORE_ULONG_PARAM_CLASS(UdpHighBurstPeriodNS, burst_period_ns);
+			CONFIG_STORE_TIME_PARAM_CLASS(UdpHighBurstPeriodNS, burst_period_ns);
 			CONFIG_STORE_ULONG_PARAM_CLASS(UdpHighNumFramesPerCycle,
 						       num_frames_per_cycle);
 			CONFIG_STORE_STRING_PARAM_CLASS(UdpHighPayloadPattern, payload_pattern);
@@ -347,7 +389,7 @@ int config_read_from_file(const char *config_file)
 
 			CONFIG_STORE_BOOL_PARAM_CLASS(UdpLowEnabled, enabled);
 			CONFIG_STORE_BOOL_PARAM_CLASS(UdpLowIgnoreRxErrors, ignore_rx_errors);
-			CONFIG_STORE_ULONG_PARAM_CLASS(UdpLowBurstPeriodNS, burst_period_ns);
+			CONFIG_STORE_TIME_PARAM_CLASS(UdpLowBurstPeriodNS, burst_period_ns);
 			CONFIG_STORE_ULONG_PARAM_CLASS(UdpLowNumFramesPerCycle,
 						       num_frames_per_cycle);
 			CONFIG_STORE_STRING_PARAM_CLASS(UdpLowPayloadPattern, payload_pattern);
@@ -373,7 +415,7 @@ int config_read_from_file(const char *config_file)
 			CONFIG_STORE_BOOL_PARAM_CLASS(GenericL2XdpBusyPollMode, xdp_busy_poll_mode);
 			CONFIG_STORE_BOOL_PARAM_CLASS(GenericL2TxTimeEnabled, tx_time_enabled);
 			CONFIG_STORE_BOOL_PARAM_CLASS(GenericL2IgnoreRxErrors, ignore_rx_errors);
-			CONFIG_STORE_ULONG_PARAM_CLASS(GenericL2TxTimeOffsetNS, tx_time_offset_ns);
+			CONFIG_STORE_TIME_PARAM_CLASS(GenericL2TxTimeOffsetNS, tx_time_offset_ns);
 			CONFIG_STORE_INT_PARAM_CLASS(GenericL2Vid, vid);
 			CONFIG_STORE_INT_PARAM_CLASS(GenericL2Pcp, pcp);
 			CONFIG_STORE_ETHER_TYPE_CLASS(GenericL2EtherType, ether_type);
@@ -403,13 +445,13 @@ int config_read_from_file(const char *config_file)
 			CONFIG_STORE_MAC_PARAM(DebugMonitorDestination, debug_monitor_destination);
 
 			CONFIG_STORE_BOOL_PARAM(StatsHistogramEnabled, stats_histogram_enabled);
-			CONFIG_STORE_ULONG_PARAM(StatsHistogramMinimumNS,
-						 stats_histogram_minimum_ns);
-			CONFIG_STORE_ULONG_PARAM(StatsHistogramMaximumNS,
-						 stats_histogram_maximum_ns);
+			CONFIG_STORE_TIME_PARAM(StatsHistogramMinimumNS,
+						stats_histogram_minimum_ns);
+			CONFIG_STORE_TIME_PARAM(StatsHistogramMaximumNS,
+						stats_histogram_maximum_ns);
 			CONFIG_STORE_STRING_PARAM(StatsHistogramFile, stats_histogram_file);
-			CONFIG_STORE_ULONG_PARAM(StatsCollectionIntervalNS,
-						 stats_collection_interval_ns);
+			CONFIG_STORE_TIME_PARAM(StatsCollectionIntervalNS,
+						stats_collection_interval_ns);
 
 			CONFIG_STORE_BOOL_PARAM(LogViaMQTT, log_via_mqtt);
 			CONFIG_STORE_INT_PARAM(LogViaMQTTThreadPriority,
