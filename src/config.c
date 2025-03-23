@@ -1209,6 +1209,12 @@ static bool config_check_keys(const char *traffic_class, enum security_mode mode
 	return true;
 }
 
+/*
+ * Perform configuration sanity checks. This includes:
+ *   - Traffic classes
+ *   - Frame lengths
+ *   - Limitations
+ */
 bool config_sanity_check(void)
 {
 	const size_t min_secure_profinet_frame_size = sizeof(struct vlan_ethernet_header) +
@@ -1217,13 +1223,6 @@ bool config_sanity_check(void)
 	const size_t min_profinet_frame_size =
 		sizeof(struct vlan_ethernet_header) + sizeof(struct profinet_rt_header);
 	size_t min_frame_size;
-
-	/*
-	 * Perform configuration sanity checks. This includes:
-	 *   - Traffic classes
-	 *   - Frame lengths
-	 *   - Limitations
-	 */
 
 	/* Either GenericL2 or PROFINET should be active. */
 	if (config_is_traffic_class_active("GenericL2") &&
@@ -1236,6 +1235,14 @@ bool config_sanity_check(void)
 		fprintf(stderr, "For simulation of PROFINET and other middlewares in parallel "
 				"start multiple instances of ref&mirror application(s) with "
 				"different profiles!\n");
+		return false;
+	}
+
+	/* Tx and Rx offset should be <= cycle time */
+	if (app_config.application_rx_base_offset_ns > app_config.application_base_cycle_time_ns ||
+	    app_config.application_tx_base_offset_ns > app_config.application_base_cycle_time_ns) {
+		fprintf(stderr, "Application(Tx|Rx)BaseOffsetNS should be less than "
+				"ApplicationBaseCycleTimeNS!\n");
 		return false;
 	}
 
