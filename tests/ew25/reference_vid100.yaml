@@ -10,9 +10,9 @@
 Application:
   ApplicationClockId: CLOCK_TAI
   # ApplicationBaseStartTimeNS: 0
-  ApplicationBaseCycleTimeNS: 1000000
-  ApplicationTxBaseOffsetNS: 800000
-  ApplicationRxBaseOffsetNS: 600000
+  ApplicationBaseCycleTimeNS: 1ms
+  ApplicationTxBaseOffsetNS: 800us
+  ApplicationRxBaseOffsetNS: 600us
   ApplicationXdpProgram: xdp_kern_profinet_vid100.o
 TSNHigh:
   TsnHighEnabled: true
@@ -89,7 +89,7 @@ RTA:
   RtaXdpWakeupMode: true
   RtaVid: 100
   RtaPcp: 4
-  RtaBurstPeriodNS: 200000000
+  RtaBurstPeriodNS: 200ms
   RtaNumFramesPerCycle: 20
   RtaPayloadPattern: |
     RtaPayloadPattern
@@ -105,8 +105,8 @@ RTA:
   RtaDestination: 48:21:0b:26:3f:fb
 Stats:
   StatsHistogramEnabled: true
-  StatsHistogramMinimumNS: 1000000
-  StatsHistogramMaximumNS: 10000000
+  StatsHistogramMinimumNS: 1ms
+  StatsHistogramMaximumNS: 10ms
   StatsHistogramFile: histogram.txt
 Log:
   LogThreadPriority: 1

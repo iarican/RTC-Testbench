@@ -11,9 +11,9 @@
 Application:
   ApplicationClockId: CLOCK_TAI
   # ApplicationBaseStartTimeNS: 0
-  ApplicationBaseCycleTimeNS: 125000
-  ApplicationTxBaseOffsetNS: 90000
-  ApplicationRxBaseOffsetNS: 40000
+  ApplicationBaseCycleTimeNS: 125us
+  ApplicationTxBaseOffsetNS: 90us
+  ApplicationRxBaseOffsetNS: 40us
   ApplicationXdpProgram: xdp_kern_profinet_vid100.o
 RTC:
   RtcEnabled: true

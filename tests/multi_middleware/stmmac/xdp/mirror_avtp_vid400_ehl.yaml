@@ -10,9 +10,9 @@
 Application:
   ApplicationClockId: CLOCK_TAI
   # ApplicationBaseStartTimeNS: 0
-  ApplicationBaseCycleTimeNS: 1000000
-  ApplicationTxBaseOffsetNS: 800000
-  ApplicationRxBaseOffsetNS: 600000
+  ApplicationBaseCycleTimeNS: 1ms
+  ApplicationTxBaseOffsetNS: 800us
+  ApplicationRxBaseOffsetNS: 600us
   ApplicationXdpProgram: xdp_kern_avtp_vid400.o
 GenericL2:
   GenericL2Name: Avtp

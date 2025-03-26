@@ -10,9 +10,9 @@
 Application:
   ApplicationClockId: CLOCK_TAI
   # ApplicationBaseStartTimeNS: 0
-  ApplicationBaseCycleTimeNS: 1000000
-  ApplicationTxBaseOffsetNS: 800000
-  ApplicationRxBaseOffsetNS: 200000
+  ApplicationBaseCycleTimeNS: 1ms
+  ApplicationTxBaseOffsetNS: 800us
+  ApplicationRxBaseOffsetNS: 200us
   ApplicationXdpProgram: xdp_kern_profinet_vid100.o
 RTC:
   RtcEnabled: true
@@ -43,7 +43,7 @@ RTA:
   RtaXdpWakeupMode: true
   RtaXdpBusyPollMode: false
   RtaVid: 100
-  RtaBurstPeriodNS: 200000000
+  RtaBurstPeriodNS: 200ms
   RtaNumFramesPerCycle: 32
   RtaPayloadPattern: |
     RtaPayloadPattern
@@ -60,7 +60,7 @@ RTA:
 DCP:
   DcpEnabled: true
   DcpVid: 100
-  DcpBurstPeriodNS: 2000000000
+  DcpBurstPeriodNS: 2s
   DcpNumFramesPerCycle: 1
   DcpPayloadPattern: |
     DcpPayloadPattern
@@ -76,7 +76,7 @@ DCP:
   DcpDestination: a8:74:1d:9d:36:14
 LLDP:
   LldpEnabled: true
-  LldpBurstPeriodNS: 5000000000
+  LldpBurstPeriodNS: 5s
   LldpNumFramesPerCycle: 1
   LldpPayloadPattern: |
     LldpPayloadPattern
@@ -92,7 +92,7 @@ LLDP:
   LldpDestination: 01:80:c2:00:00:0e
 UDPHigh:
   UdpHighEnabled: true
-  UdpHighBurstPeriodNS: 1000000000
+  UdpHighBurstPeriodNS: 1s
   UdpHighNumFramesPerCycle: 1
   UdpHighPayloadPattern: |
     UdpHighPayloadPattern
@@ -110,7 +110,7 @@ UDPHigh:
   UdpHighSource: 192.168.1.2
 UDPLow:
   UdpLowEnabled: true
-  UdpLowBurstPeriodNS: 1000000000
+  UdpLowBurstPeriodNS: 1s
   UdpLowNumFramesPerCycle: 1
   UdpLowPayloadPattern: |
     UdpLowPayloadPattern

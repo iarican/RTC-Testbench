@@ -10,9 +10,9 @@
 Application:
   ApplicationClockId: CLOCK_TAI
   # ApplicationBaseStartTimeNS: 0
-  ApplicationBaseCycleTimeNS: 1000000
-  ApplicationTxBaseOffsetNS: 800000
-  ApplicationRxBaseOffsetNS: 600000
+  ApplicationBaseCycleTimeNS: 1ms
+  ApplicationTxBaseOffsetNS: 800us
+  ApplicationRxBaseOffsetNS: 600us
   ApplicationXdpProgram: xdp_kern_opcua_vid300.o
 GenericL2:
   GenericL2Name: OpcUa
@@ -22,7 +22,7 @@ GenericL2:
   GenericL2XdpZcMode: true
   GenericL2XdpWakeupMode: false
   GenericL2TxTimeEnabled: true
-  GenericL2TxTimeOffsetNS: 200000
+  GenericL2TxTimeOffsetNS: 200us
   GenericL2Vid: 300
   GenericL2Pcp: 6
   GenericL2EtherType: 0xb62c
