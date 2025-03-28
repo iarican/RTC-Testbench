@@ -1,6 +1,6 @@
 .. SPDX-License-Identifier: BSD-2-Clause
 ..
-.. Copyright (C) 2024 Linutronix GmbH
+.. Copyright (C) 2024-2025 Linutronix GmbH
 .. Author Kurt Kanzenbach <kurt@linutronix.de>
 ..
 .. Testbench documentation quick start guide.
@@ -69,6 +69,29 @@ simply installed via the package management:
    # Install real time Linux kernel
    apt update
    apt install -y linux-image-rt-amd64
+
+Alternatively the `ELBE <https://www.elbe-rfs.org>`_ build environment can be used to build a ready
+to go Debian based image. The necessary XML file is included in the repository. Follow the steps on this website to install ELBE:
+
+- https://elbe-rfs.org/docs/sphinx/v15.5/article-quickstart.html#installing-elbe
+
+Afterwards the image can be build with:
+
+.. code:: bash
+
+   # Generates testbench.img with 440 GiB size for SSD/HDD
+   elbe initvm -v hdd submit elbe/x86_64.xml
+   # Or generates testbench.img with 14 GiB size for SD cards/USB sticks
+   elbe initvm -v sd submit elbe/x86_64.xml
+
+The resulting build folder contains a file called ``elbe-build-XXX/testbench.img``. This file can be
+directly copied to the SSD/HDD/USB stick/SD card of the devices.
+
+.. code:: bash
+
+   # Copy testbench.img to device /dev/sd<X>
+   # Make sure /dev/sd<X> refers to the correct device
+   tar xJOf elbe-build-XXX/testbench.img.tar.xz | dd of=/dev/sd<X> bs=1M status=progress
 
 Configuration
 ^^^^^^^^^^^^^
