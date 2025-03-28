@@ -1,0 +1,139 @@
+<!--
+
+SPDX-License-Identifier: BSD-2-Clause
+Copyright (C) 2021-2025 Linutronix GmbH
+Author Kurt Kanzenbach <kurt@linutronix.de>
+
+The following XML file can be used to build a ready to go Debian Bookworm based image. It contains all
+of the requirements to run the RTC-Testbench.
+
+It can built with ELBE: https://www.elbe-rfs.org/
+
+Run 'elbe initvm -v <hdd|sd> submit x86_64.xml' to build it.
+
+-->
+<ns0:RootFileSystem xmlns:ns0="https://www.linutronix.de/projects/Elbe" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" created="2009-05-20T08:50:56" revision="6" xsi:schemaLocation="https://www.linutronix.de/projects/Elbe dbsfed.xsd">
+  <project>
+    <name>testbench</name>
+    <version>1.0</version>
+    <description>
+      Standard Debian Image for Intel x86_64 platforms.
+    </description>
+    <buildtype>amd64</buildtype>
+    <mirror>
+      <primary_host>deb.debian.org</primary_host>
+      <primary_path>/debian</primary_path>
+      <primary_proto>http</primary_proto>
+      <url-list>
+        <url>
+          <binary>
+            http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
+          </binary>
+          <source>
+            http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
+          </source>
+        </url>
+	<url>
+          <binary>
+            http://deb.debian.org/debian bookworm contrib non-free non-free-firmware
+          </binary>
+          <source>
+            http://deb.debian.org/debian bookworm contrib non-free non-free-firmware
+          </source>
+        </url>
+      </url-list>
+    </mirror>
+    <suite>bookworm</suite>
+  </project>
+  <target>
+    <hostname>testbench</hostname>
+    <domain>example.com</domain>
+    <passwd>root</passwd>
+    <console>ttyS0,115200</console>
+    <images>
+      <gpthd>
+        <name>testbench.img</name>
+        <size variant="hdd">400GiB</size>
+        <size variant="sd">14GiB</size>
+        <grub-install/>
+        <partition>
+          <size>200MiB</size>
+          <label>uefi</label>
+          <bootable>true</bootable>
+        </partition>
+        <partition>
+          <size>remain</size>
+          <label>rfs</label>
+        </partition>
+      </gpthd>
+    </images>
+    <fstab>
+      <bylabel>
+        <label>rfs</label>
+        <mountpoint>/</mountpoint>
+        <fs>
+          <type>ext4</type>
+          <tune2fs>-i 0</tune2fs>
+        </fs>
+      </bylabel>
+      <bylabel>
+        <label>uefi</label>
+        <mountpoint>/boot/efi</mountpoint>
+        <fs>
+          <type>vfat</type>
+        </fs>
+      </bylabel>
+    </fstab>
+    <install-recommends />
+    <pkg-list>
+      <!-- Install the signed EFI version of grub -->
+      <pkg>grub-efi-amd64-signed</pkg>
+      <pkg>shim-signed</pkg>
+      <!-- Install Debian RT Kernel by default -->
+      <pkg>linux-image-rt-amd64</pkg>
+      <!-- Add useful utilities for network development -->
+      <pkg>trace-cmd</pkg>
+      <pkg>bpftrace</pkg>
+      <pkg>rt-tests</pkg>
+      <pkg>ethtool</pkg>
+      <pkg>tcpdump</pkg>
+      <pkg>build-essential</pkg>
+      <pkg>cmake</pkg>
+      <pkg>git</pkg>
+      <pkg>clang</pkg>
+      <pkg>llvm</pkg>
+      <pkg>libc6-dev</pkg>
+      <pkg>libyaml-dev</pkg>
+      <pkg>libssl-dev</pkg>
+      <pkg>libmosquitto-dev</pkg>
+      <pkg>iproute2</pkg>
+      <pkg>net-tools</pkg>
+      <pkg>emacs-nox</pkg>
+      <pkg>vim-nox</pkg>
+      <pkg>pkg-config</pkg>
+      <pkg>libbpf-dev</pkg>
+      <pkg>libxdp-dev</pkg>
+      <pkg>busybox</pkg>
+      <pkg>openssh-server</pkg>
+      <pkg>bison</pkg>
+      <pkg>flex</pkg>
+      <pkg>gdb</pkg>
+      <pkg>stress-ng</pkg>
+      <pkg>tig</pkg>
+      <pkg>linuxptp</pkg>
+      <pkg>linux-perf</pkg>
+      <pkg>iperf</pkg>
+      <pkg>iperf3</pkg>
+      <pkg>pciutils</pkg>
+      <pkg>htop</pkg>
+      <pkg>bc</pkg>
+      <pkg>rsync</pkg>
+      <pkg>locales</pkg>
+      <pkg>locales-all</pkg>
+      <pkg>libssl-dev</pkg>
+      <pkg>dwarves</pkg>
+      <!-- Firmware -->
+      <pkg>firmware-linux</pkg>
+    </pkg-list>
+  </target>
+</ns0:RootFileSystem>
