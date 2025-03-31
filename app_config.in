@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (C) 2020-2023 Linutronix GmbH
+ * Copyright (C) 2020-2025 Linutronix GmbH
  * Author Kurt Kanzenbach <kurt@linutronix.de>
  */
 
@@ -14,5 +14,6 @@
 #cmakedefine HAVE_SO_BUSY_POLL @HAVE_SO_BUSY_POLL@
 #cmakedefine HAVE_SO_PREFER_BUSY_POLL @HAVE_SO_PREFER_BUSY_POLL@
 #cmakedefine HAVE_SO_BUSY_POLL_BUDGET @HAVE_SO_BUSY_POLL_BUDGET@
+#cmakedefine HAVE_XDP_TX_TIME @HAVE_XDP_TX_TIME@
 
 #endif	/* _APP_CONFIG_H_ */

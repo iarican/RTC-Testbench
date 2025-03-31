@@ -31,6 +31,7 @@ pkg_search_module(LIBCRYPTO libcrypto>=3.0 REQUIRED)
 check_symbol_exists(SO_BUSY_POLL "sys/socket.h" HAVE_SO_BUSY_POLL)
 check_symbol_exists(SO_PREFER_BUSY_POLL "sys/socket.h" HAVE_SO_PREFER_BUSY_POLL)
 check_symbol_exists(SO_BUSY_POLL_BUDGET "sys/socket.h" HAVE_SO_BUSY_POLL_BUDGET)
+check_symbol_exists(XDP_TXMD_FLAGS_LAUNCH_TIME "linux/if_xdp.h" HAVE_XDP_FLAGS_TX_TIME)
 
 add_executable(reference
   src/reference.c
@@ -110,6 +111,14 @@ target_include_directories(mirror PUBLIC ${YAML_INCLUDE_DIRS})
 target_include_directories(mirror PUBLIC ${LIBBPF_INCLUDE_DIRS})
 target_include_directories(mirror PUBLIC ${LIBXDP_INCLUDE_DIRS})
 target_include_directories(mirror PUBLIC ${LIBCRYPTO_INCLUDE_DIRS})
+
+#
+# Check for XDP and Tx Launch Time support. It requires: libxdp >= 1.5.0 and Linux v6.15.
+#
+if ((${LIBXDP_VERSION} GREATER_EQUAL 1.5.0) AND (${HAVE_XDP_FLAGS_TX_TIME}))
+  message(STATUS "XDP and Tx Launch Time support available using libxdp version: ${LIBXDP_VERSION}")
+  set(HAVE_XDP_TX_TIME ${HAVE_XDP_FLAGS_TX_TIME})
+endif()
 
 set(INSTALL_EBPF_DIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/rtc-testbench/ebpf)
 configure_file(
