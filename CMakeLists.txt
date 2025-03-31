@@ -122,20 +122,12 @@ include_directories("${PROJECT_BINARY_DIR}")
 # Add code for compiling XDP eBPF programes.
 #
 set(ASM_INCLUDE "/usr/include/${CMAKE_C_LIBRARY_ARCHITECTURE}")
-set(CLANG_FLAGS -S --target=bpf -D __BPF_TRACING__ -Wall -O2 -fno-stack-protector -emit-llvm -g -I ${ASM_INCLUDE})
-set(LLC_FLAGS -march=bpf -filetype=obj)
+set(CLANG_FLAGS -Wall -O2 -fno-stack-protector -I ${ASM_INCLUDE})
 
 function(add_xdp_prog name)
-  add_custom_target(${name}_stage1 ALL
-    COMMAND clang ${CLANG_FLAGS} -c -o ${name}.ll ${name}.c
+  add_custom_target(${name} ALL
+    COMMAND clang ${CLANG_FLAGS} -target bpf -c -g -o ${CMAKE_BINARY_DIR}/${name}.o ${name}.c
     DEPENDS reference
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src
-    SOURCES src/${name}.c
-  )
-
-  add_custom_target(${name}_stage2 ALL
-    COMMAND llc ${LLC_FLAGS} -o ${CMAKE_BINARY_DIR}/${name}.o ${name}.ll
-    DEPENDS ${name}_stage1
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src
     SOURCES src/${name}.c
   )
