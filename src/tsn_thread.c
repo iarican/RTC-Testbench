@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-2-Clause
 /*
- * Copyright (C) 2021-2024 Linutronix GmbH
+ * Copyright (C) 2021-2025 Linutronix GmbH
  * Author Kurt Kanzenbach <kurt@linutronix.de>
  */
 
@@ -583,7 +583,8 @@ int tsn_threads_create(struct thread_context *thread_context)
 		thread_context->xsk = xdp_open_socket(
 			tsn_config->interface, app_config.application_xdp_program,
 			tsn_config->rx_queue, tsn_config->xdp_skb_mode, tsn_config->xdp_zc_mode,
-			tsn_config->xdp_wakeup_mode, tsn_config->xdp_busy_poll_mode);
+			tsn_config->xdp_wakeup_mode, tsn_config->xdp_busy_poll_mode,
+			tsn_config->tx_time_enabled && !tsn_config->rx_mirror_enabled);
 		if (!thread_context->xsk) {
 			fprintf(stderr, "Failed to create Tsn Xdp socket!\n");
 			ret = -ENOMEM;

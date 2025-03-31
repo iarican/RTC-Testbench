@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-2-Clause
 /*
- * Copyright (C) 2020-2024 Linutronix GmbH
+ * Copyright (C) 2020-2025 Linutronix GmbH
  * Author Kurt Kanzenbach <kurt@linutronix.de>
  */
 
@@ -149,6 +149,7 @@ static void rtc_gen_and_send_xdp_frames(struct thread_context *thread_context,
 	xdp.sequence_counter_begin = sequence_counter;
 	xdp.meta_data_offset = thread_context->meta_data_offset;
 	xdp.frame_type = RTC_FRAME_TYPE;
+	xdp.tx_time = NULL;
 
 	xdp_gen_and_send_frames(xsk, &xdp);
 }
@@ -569,7 +570,7 @@ int rtc_threads_create(struct thread_context *thread_context)
 		thread_context->xsk = xdp_open_socket(
 			rtc_config->interface, app_config.application_xdp_program,
 			rtc_config->rx_queue, rtc_config->xdp_skb_mode, rtc_config->xdp_zc_mode,
-			rtc_config->xdp_wakeup_mode, rtc_config->xdp_busy_poll_mode);
+			rtc_config->xdp_wakeup_mode, rtc_config->xdp_busy_poll_mode, false);
 		if (!thread_context->xsk) {
 			fprintf(stderr, "Failed to create Rtc Xdp socket!\n");
 			ret = -ENOMEM;

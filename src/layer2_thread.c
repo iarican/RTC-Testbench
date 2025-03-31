@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-2-Clause
 /*
- * Copyright (C) 2022-2024 Linutronix GmbH
+ * Copyright (C) 2022-2025 Linutronix GmbH
  * Author Kurt Kanzenbach <kurt@linutronix.de>
  */
 
@@ -629,7 +629,8 @@ struct thread_context *generic_l2_threads_create(void)
 		thread_context->xsk = xdp_open_socket(
 			l2_config->interface, app_config.application_xdp_program,
 			l2_config->rx_queue, l2_config->xdp_skb_mode, l2_config->xdp_zc_mode,
-			l2_config->xdp_wakeup_mode, l2_config->xdp_busy_poll_mode);
+			l2_config->xdp_wakeup_mode, l2_config->xdp_busy_poll_mode,
+			l2_config->tx_time_enabled && !l2_config->rx_mirror_enabled);
 		if (!thread_context->xsk) {
 			fprintf(stderr, "Failed to create GenericL2 Xdp socket!\n");
 			goto err_socket;

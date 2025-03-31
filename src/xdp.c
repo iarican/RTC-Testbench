@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-2-Clause
 /*
- * Copyright (C) 2021-2024 Linutronix GmbH
+ * Copyright (C) 2021-2025 Linutronix GmbH
  * Author Kurt Kanzenbach <kurt@linutronix.de>
  */
 
@@ -25,6 +25,7 @@
 #include "log.h"
 #include "net.h"
 #include "security.h"
+#include "tx_time.h"
 #include "utils.h"
 #include "xdp.h"
 
@@ -149,10 +150,40 @@ static int xdp_configure_socket_options(struct xdp_socket *xsk, bool busy_poll_m
 	return ret;
 }
 
-struct xdp_socket *xdp_open_socket(const char *interface, const char *xdp_program, int queue,
-				   bool skb_mode, bool zero_copy_mode, bool wakeup_mode,
-				   bool busy_poll_mode)
+static int xdp_umem_create(struct xdp_socket *xsk, bool tx_time_mode)
 {
+	void *buffer = NULL;
+	int ret;
+
+	/* Allocate user space memory for xdp frames */
+	ret = posix_memalign(&buffer, sysconf(_SC_PAGE_SIZE), XDP_NUM_FRAMES * XDP_FRAME_SIZE);
+	if (ret) {
+		fprintf(stderr, "posix_memalign() failed\n");
+		return -ENOMEM;
+	}
+	memset(buffer, '\0', XDP_NUM_FRAMES * XDP_FRAME_SIZE);
+
+	/*
+	 * libxdp >= 1.5.0 exports a new function called xsk_umem__create_opts() which supports Tx
+	 * MetaData. Use this variant if available.
+	 */
+#ifdef HAVE_XDP_TX_TIME
+	DECLARE_LIBXDP_OPTS(xsk_umem_opts, cfg, .size = XDP_NUM_FRAMES * XDP_FRAME_SIZE,
+			    .fill_size = XSK_RING_PROD__DEFAULT_NUM_DESCS,
+			    .comp_size = XSK_RING_CONS__DEFAULT_NUM_DESCS,
+			    .frame_size = XDP_FRAME_SIZE,
+			    .frame_headroom = XSK_UMEM__DEFAULT_FRAME_HEADROOM,
+			    /* struct xsk_tx_metadata contains all AF_XDP offload requests. */
+			    .flags = tx_time_mode ? XDP_UMEM_TX_METADATA_LEN : 0,
+			    .tx_metadata_len = tx_time_mode ? sizeof(struct xsk_tx_metadata) : 0, );
+
+	xsk->umem.umem = xsk_umem__create_opts(buffer, &xsk->umem.fq, &xsk->umem.cq, &cfg);
+	if (!xsk->umem.umem) {
+		ret = -errno;
+		fprintf(stderr, "xsk_umem__create_opts() failed: %s\n", strerror(-ret));
+		goto err;
+	}
+#else
 	struct xsk_umem_config cfg = {
 		.fill_size = XSK_RING_PROD__DEFAULT_NUM_DESCS,
 		.comp_size = XSK_RING_CONS__DEFAULT_NUM_DESCS,
@@ -160,9 +191,30 @@ struct xdp_socket *xdp_open_socket(const char *interface, const char *xdp_progra
 		.frame_headroom = XSK_UMEM__DEFAULT_FRAME_HEADROOM,
 		.flags = 0,
 	};
+
+	ret = xsk_umem__create(&xsk->umem.umem, buffer, XDP_NUM_FRAMES * XDP_FRAME_SIZE,
+			       &xsk->umem.fq, &xsk->umem.cq, &cfg);
+	if (ret) {
+		fprintf(stderr, "xsk_umem__create() failed: %s\n", strerror(-ret));
+		goto err;
+	}
+#endif
+
+	xsk->umem.buffer = buffer;
+	xsk->tx_time_mode = tx_time_mode;
+	return 0;
+
+err:
+	free(buffer);
+	return ret;
+}
+
+struct xdp_socket *xdp_open_socket(const char *interface, const char *xdp_program, int queue,
+				   bool skb_mode, bool zero_copy_mode, bool wakeup_mode,
+				   bool busy_poll_mode, bool tx_time_mode)
+{
 	struct xsk_socket_config xsk_cfg;
 	struct xdp_socket *xsk;
-	void *buffer = NULL;
 	int ret, i, fd;
 	uint32_t idx;
 
@@ -174,21 +226,12 @@ struct xdp_socket *xdp_open_socket(const char *interface, const char *xdp_progra
 	if (ret)
 		goto err;
 
-	/* Allocate user space memory for xdp frames */
-	ret = posix_memalign(&buffer, sysconf(_SC_PAGE_SIZE), XDP_NUM_FRAMES * XDP_FRAME_SIZE);
+	/* Allocate and register AF_XDP umem area */
+	ret = xdp_umem_create(xsk, tx_time_mode);
 	if (ret) {
-		fprintf(stderr, "posix_memalign() failed\n");
-		goto err;
-	}
-	memset(buffer, '\0', XDP_NUM_FRAMES * XDP_FRAME_SIZE);
-
-	ret = xsk_umem__create(&xsk->umem.umem, buffer, XDP_NUM_FRAMES * XDP_FRAME_SIZE,
-			       &xsk->umem.fq, &xsk->umem.cq, &cfg);
-	if (ret) {
-		fprintf(stderr, "xsk_umem__create() failed: %s\n", strerror(-ret));
+		fprintf(stderr, "Failed to allocate AF_XDP UMEM area!\n");
 		goto err2;
 	}
-	xsk->umem.buffer = buffer;
 
 	/* Add some buffers */
 	ret = xsk_ring_prod__reserve(&xsk->umem.fq, XSK_RING_PROD__DEFAULT_NUM_DESCS, &idx);
@@ -238,9 +281,9 @@ struct xdp_socket *xdp_open_socket(const char *interface, const char *xdp_progra
 err4:
 	xsk_socket__delete(xsk->xsk);
 err3:
+	free(xsk->umem.buffer);
 	xsk_umem__delete(xsk->umem.umem);
 err2:
-	free(buffer);
 err:
 	free(xsk);
 	return NULL;
@@ -333,6 +376,42 @@ void xdp_complete_tx(struct xdp_socket *xsk)
 	xsk->outstanding_tx -= received;
 }
 
+static unsigned char *xdp_prepare_tx_desc(struct xdp_socket *xsk, struct xdp_desc *tx_desc,
+					  const struct xdp_tx_time *tx_time, int i)
+{
+	unsigned char *data;
+
+#ifdef HAVE_XDP_TX_TIME
+	/* Add Tx Launch Time if supported. */
+	if (xsk->tx_time_mode) {
+		struct xsk_tx_metadata *meta;
+		uint64_t time;
+
+		/* Reserve meta data space for Tx Time. */
+		tx_desc->addr += sizeof(struct xsk_tx_metadata);
+
+		data = xsk_umem__get_data(xsk->umem.buffer, tx_desc->addr);
+		meta = (struct xsk_tx_metadata *)(data - sizeof(struct xsk_tx_metadata));
+
+		/* Add Tx Launch Time to Tx desc. */
+		meta->flags = XDP_TXMD_FLAGS_LAUNCH_TIME;
+		time = tx_time_get_frame_tx_time(tx_time->wakeup_time,
+						 tx_time->sequence_counter_begin + i,
+						 tx_time->duration, tx_time->num_frames_per_cycle,
+						 tx_time->tx_time_offset, tx_time->traffic_class);
+		meta->request.launch_time = time;
+
+		tx_desc->options |= XDP_TX_METADATA;
+	} else {
+		data = xsk_umem__get_data(xsk->umem.buffer, tx_desc->addr);
+	}
+#else
+	data = xsk_umem__get_data(xsk->umem.buffer, tx_desc->addr);
+#endif
+
+	return data;
+}
+
 void xdp_gen_and_send_frames(struct xdp_socket *xsk, const struct xdp_gen_config *xdp)
 {
 	struct timespec tx_time = {};
@@ -371,7 +450,7 @@ void xdp_gen_and_send_frames(struct xdp_socket *xsk, const struct xdp_gen_config
 				     XSK_RING_PROD__DEFAULT_NUM_DESCS;
 
 		/* Get frame and prepare it */
-		data = xsk_umem__get_data(xsk->umem.buffer, tx_desc->addr);
+		data = xdp_prepare_tx_desc(xsk, tx_desc, xdp->tx_time, i);
 
 		frame_config.mode = xdp->mode;
 		frame_config.security_context = xdp->security_context;

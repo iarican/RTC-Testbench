@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (C) 2021-2024 Linutronix GmbH
+ * Copyright (C) 2021-2025 Linutronix GmbH
  * Author Kurt Kanzenbach <kurt@linutronix.de>
  */
 
@@ -49,6 +49,16 @@ struct xdp_socket {
 	struct xdp_program *prog;
 	int fd;
 	bool busy_poll_mode;
+	bool tx_time_mode;
+};
+
+struct xdp_tx_time {
+	const char *traffic_class;
+	uint64_t wakeup_time;
+	uint64_t sequence_counter_begin;
+	uint64_t duration;
+	uint64_t tx_time_offset;
+	size_t num_frames_per_cycle;
 };
 
 struct xdp_gen_config {
@@ -63,11 +73,12 @@ struct xdp_gen_config {
 	uint64_t sequence_counter_begin;
 	uint32_t meta_data_offset;
 	enum stat_frame_type frame_type;
+	const struct xdp_tx_time *tx_time;
 };
 
 struct xdp_socket *xdp_open_socket(const char *interface, const char *xdp_program, int queue,
 				   bool skb_mode, bool zero_copy_mode, bool wakeup_mode,
-				   bool busy_poll_mode);
+				   bool busy_poll_mode, bool tx_time_mode);
 void xdp_close_socket(struct xdp_socket *xsk, const char *interface, bool skb_mode);
 void xdp_complete_tx_only(struct xdp_socket *xsk);
 void xdp_complete_tx(struct xdp_socket *xsk);
