@@ -1330,13 +1330,16 @@ bool config_sanity_check(void)
 	}
 
 	/* XDP and TxLauchTime combined doesn't work */
-	if ((app_config.classes[GENERICL2_FRAME_TYPE].tx_time_enabled &&
-	     app_config.classes[GENERICL2_FRAME_TYPE].xdp_enabled) ||
-	    (app_config.classes[TSN_HIGH_FRAME_TYPE].tx_time_enabled &&
-	     app_config.classes[TSN_HIGH_FRAME_TYPE].xdp_enabled) ||
-	    (app_config.classes[TSN_LOW_FRAME_TYPE].tx_time_enabled &&
-	     app_config.classes[TSN_LOW_FRAME_TYPE].xdp_enabled)) {
-		fprintf(stderr, "TxTime and Xdp cannot be used at the same time!\n");
+	if (!config_have_xdp_tx_time() &&
+	    ((app_config.classes[GENERICL2_FRAME_TYPE].tx_time_enabled &&
+	      app_config.classes[GENERICL2_FRAME_TYPE].xdp_enabled) ||
+	     (app_config.classes[TSN_HIGH_FRAME_TYPE].tx_time_enabled &&
+	      app_config.classes[TSN_HIGH_FRAME_TYPE].xdp_enabled) ||
+	     (app_config.classes[TSN_LOW_FRAME_TYPE].tx_time_enabled &&
+	      app_config.classes[TSN_LOW_FRAME_TYPE].xdp_enabled))) {
+		fprintf(stderr,
+			"TxTime and XDP cannot be used at the same time on this platform!\n");
+		fprintf(stderr, "Update libxdp to >= v1.5.0 support it.\n");
 		return false;
 	}
 

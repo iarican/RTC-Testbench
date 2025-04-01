@@ -403,4 +403,13 @@ static inline bool config_have_mosquitto(void)
 #endif
 }
 
+static inline bool config_have_xdp_tx_time(void)
+{
+#ifdef HAVE_XDP_TX_TIME
+	return true;
+#else
+	return false;
+#endif
+}
+
 #endif /* _CONFIG_H_ */
