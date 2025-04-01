@@ -41,13 +41,22 @@ static void tsn_initialize_frames(struct thread_context *thread_context, unsigne
 	const struct traffic_class_config *tsn_config = thread_context->conf;
 	size_t i;
 
-	for (i = 0; i < num_frames; ++i)
-		initialize_profinet_frame(tsn_config->security_mode, frame_idx(frame_data, i),
-					  MAX_FRAME_SIZE, source, destination,
-					  tsn_config->payload_pattern,
+	for (i = 0; i < num_frames; ++i) {
+		unsigned char *frame = frame_idx(frame_data, i);
+
+		/*
+		 * In case both AF_XDP and Tx Launch Time are enabled the payload starts at:
+		 *   frame_data + sizeof(struct xsk_tx_metadata)
+		 */
+		if (tsn_config->xdp_enabled && tsn_config->tx_time_enabled)
+			frame += sizeof(struct xsk_tx_metadata);
+
+		initialize_profinet_frame(tsn_config->security_mode, frame, MAX_FRAME_SIZE, source,
+					  destination, tsn_config->payload_pattern,
 					  tsn_config->payload_pattern_length,
 					  tsn_config->vid | tsn_config->pcp << VLAN_PCP_SHIFT,
 					  thread_context->frame_id);
+	}
 }
 
 static int tsn_send_messages(struct thread_context *thread_context, int socket_fd,
@@ -142,22 +151,32 @@ static int tsn_gen_and_send_frames(struct thread_context *thread_context, int so
 
 static void tsn_gen_and_send_xdp_frames(struct thread_context *thread_context,
 					struct xdp_socket *xsk, uint64_t sequence_counter,
+					uint64_t wakeup_time, uint64_t duration,
 					uint32_t *frame_number)
 {
 	const struct traffic_class_config *tsn_config = thread_context->conf;
-	struct xdp_gen_config xdp;
-
-	xdp.mode = tsn_config->security_mode;
-	xdp.security_context = thread_context->tx_security_context;
-	xdp.iv_prefix = (const unsigned char *)tsn_config->security_iv_prefix;
-	xdp.payload_pattern = thread_context->payload_pattern;
-	xdp.payload_pattern_length = thread_context->payload_pattern_length;
-	xdp.frame_length = tsn_config->frame_length;
-	xdp.num_frames_per_cycle = tsn_config->num_frames_per_cycle;
-	xdp.frame_number = frame_number;
-	xdp.sequence_counter_begin = sequence_counter;
-	xdp.meta_data_offset = thread_context->meta_data_offset;
-	xdp.frame_type = thread_context->frame_type;
+	struct xdp_tx_time tx_time = {
+		.traffic_class = thread_context->traffic_class,
+		.tx_time_offset = tsn_config->tx_time_offset_ns,
+		.wakeup_time = wakeup_time,
+		.num_frames_per_cycle = tsn_config->num_frames_per_cycle,
+		.sequence_counter_begin = sequence_counter,
+		.duration = duration,
+	};
+	struct xdp_gen_config xdp = {
+		.mode = tsn_config->security_mode,
+		.security_context = thread_context->tx_security_context,
+		.iv_prefix = (const unsigned char *)tsn_config->security_iv_prefix,
+		.payload_pattern = thread_context->payload_pattern,
+		.payload_pattern_length = thread_context->payload_pattern_length,
+		.frame_length = tsn_config->frame_length,
+		.num_frames_per_cycle = tsn_config->num_frames_per_cycle,
+		.frame_number = frame_number,
+		.sequence_counter_begin = sequence_counter,
+		.meta_data_offset = thread_context->meta_data_offset,
+		.frame_type = thread_context->frame_type,
+		.tx_time = tsn_config->tx_time_enabled ? &tx_time : NULL,
+	};
 
 	xdp_gen_and_send_frames(xsk, &xdp);
 }
@@ -315,6 +334,8 @@ static void *tsn_xdp_tx_thread_routine(void *data)
 	struct timespec wakeup_time;
 	unsigned char *frame_data;
 	struct xdp_socket *xsk;
+	uint32_t link_speed;
+	uint64_t duration;
 	int ret;
 
 	xsk = thread_context->xsk;
@@ -325,6 +346,15 @@ static void *tsn_xdp_tx_thread_routine(void *data)
 			    thread_context->traffic_class);
 		return NULL;
 	}
+
+	ret = get_interface_link_speed(tsn_config->interface, &link_speed);
+	if (ret) {
+		log_message(LOG_LEVEL_ERROR, "%sTx: Failed to get link speed!\n",
+			    thread_context->traffic_class);
+		return NULL;
+	}
+
+	duration = tx_time_get_frame_duration(link_speed, tsn_config->frame_length);
 
 	/* First half of umem area is for Rx, the second half is for Tx. */
 	frame_data = xsk_umem__get_data(xsk->umem.buffer,
@@ -388,6 +418,7 @@ static void *tsn_xdp_tx_thread_routine(void *data)
 		 */
 		if (!mirror_enabled) {
 			tsn_gen_and_send_xdp_frames(thread_context, xsk, sequence_counter,
+						    ts_to_ns(&wakeup_time), duration,
 						    &frame_number);
 			sequence_counter += num_frames;
 		} else {

@@ -50,7 +50,13 @@ static void generic_l2_initialize_frame(struct thread_context *thread_context,
 	 *   Cycle counter
 	 *   Payload
 	 *   Padding to maxFrame
+	 *
+	 * In case both AF_XDP and Tx Launch Time are enabled the payload starts at:
+	 *   frame_data + sizeof(struct xsk_tx_metadata)
 	 */
+
+	if (l2_config->xdp_enabled && l2_config->tx_time_enabled)
+		frame_data += sizeof(struct xsk_tx_metadata);
 
 	eth = (struct vlan_ethernet_header *)frame_data;
 	l2 = (struct generic_l2_header *)(frame_data + sizeof(*eth));
@@ -171,22 +177,32 @@ static int generic_l2_gen_and_send_frames(struct thread_context *thread_context,
 
 static void generic_l2_gen_and_send_xdp_frames(struct thread_context *thread_context,
 					       size_t num_frames_per_cycle,
-					       uint64_t sequence_counter, uint32_t *frame_number)
+					       uint64_t sequence_counter, uint64_t wakeup_time,
+					       uint64_t duration, uint32_t *frame_number)
 {
 	const struct traffic_class_config *l2_config = thread_context->conf;
-	struct xdp_gen_config xdp;
-
-	xdp.mode = SECURITY_MODE_NONE;
-	xdp.security_context = NULL;
-	xdp.iv_prefix = NULL;
-	xdp.payload_pattern = NULL;
-	xdp.payload_pattern_length = 0;
-	xdp.frame_length = l2_config->frame_length;
-	xdp.num_frames_per_cycle = num_frames_per_cycle;
-	xdp.frame_number = frame_number;
-	xdp.sequence_counter_begin = sequence_counter;
-	xdp.meta_data_offset = thread_context->meta_data_offset;
-	xdp.frame_type = GENERICL2_FRAME_TYPE;
+	struct xdp_tx_time tx_time = {
+		.traffic_class = thread_context->traffic_class,
+		.tx_time_offset = l2_config->tx_time_offset_ns,
+		.wakeup_time = wakeup_time,
+		.num_frames_per_cycle = num_frames_per_cycle,
+		.sequence_counter_begin = sequence_counter,
+		.duration = duration,
+	};
+	struct xdp_gen_config xdp = {
+		.mode = SECURITY_MODE_NONE,
+		.security_context = NULL,
+		.iv_prefix = NULL,
+		.payload_pattern = NULL,
+		.payload_pattern_length = 0,
+		.frame_length = l2_config->frame_length,
+		.num_frames_per_cycle = num_frames_per_cycle,
+		.frame_number = frame_number,
+		.sequence_counter_begin = sequence_counter,
+		.meta_data_offset = thread_context->meta_data_offset,
+		.frame_type = GENERICL2_FRAME_TYPE,
+		.tx_time = l2_config->tx_time_enabled ? &tx_time : NULL,
+	};
 
 	xdp_gen_and_send_frames(thread_context->xsk, &xdp);
 }
@@ -300,6 +316,8 @@ static void *generic_l2_xdp_tx_thread_routine(void *data)
 	struct timespec wakeup_time;
 	unsigned char *frame_data;
 	struct xdp_socket *xsk;
+	uint32_t link_speed;
+	uint64_t duration;
 	int ret;
 
 	xsk = thread_context->xsk;
@@ -309,6 +327,14 @@ static void *generic_l2_xdp_tx_thread_routine(void *data)
 		log_message(LOG_LEVEL_ERROR, "GenericL2Tx: Failed to get Source MAC address!\n");
 		return NULL;
 	}
+
+	ret = get_interface_link_speed(l2_config->interface, &link_speed);
+	if (ret) {
+		log_message(LOG_LEVEL_ERROR, "GenericL2Tx: Failed to get link speed!\n");
+		return NULL;
+	}
+
+	duration = tx_time_get_frame_duration(link_speed, l2_config->frame_length);
 
 	/* First half of umem area is for Rx, the second half is for Tx. */
 	frame_data = xsk_umem__get_data(xsk->umem.buffer,
@@ -342,7 +368,8 @@ static void *generic_l2_xdp_tx_thread_routine(void *data)
 
 		if (!mirror_enabled) {
 			generic_l2_gen_and_send_xdp_frames(thread_context, num_frames,
-							   sequence_counter, &frame_number);
+							   sequence_counter, ts_to_ns(&wakeup_time),
+							   duration, &frame_number);
 			sequence_counter += num_frames;
 		} else {
 			unsigned int received;
