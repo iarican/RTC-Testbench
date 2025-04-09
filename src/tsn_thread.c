@@ -45,17 +45,20 @@ static void tsn_initialize_frames(struct thread_context *thread_context, unsigne
 
 	for (i = 0; i < num_frames; ++i) {
 		unsigned char *frame = frame_idx(frame_data, i);
+		size_t frame_length = MAX_FRAME_SIZE;
 
 		/*
 		 * In case both AF_XDP and Tx Launch Time are enabled the payload starts at:
 		 *   frame_data + sizeof(struct xsk_tx_metadata)
 		 */
 #ifdef HAVE_XDP_TX_TIME
-		if (tsn_config->xdp_enabled && tsn_config->tx_time_enabled)
+		if (tsn_config->xdp_enabled && tsn_config->tx_time_enabled) {
 			frame += sizeof(struct xsk_tx_metadata);
+			frame_length -= sizeof(struct xsk_tx_metadata);
+		}
 #endif
 
-		initialize_profinet_frame(tsn_config->security_mode, frame, MAX_FRAME_SIZE, source,
+		initialize_profinet_frame(tsn_config->security_mode, frame, frame_length, source,
 					  destination, tsn_config->payload_pattern,
 					  tsn_config->payload_pattern_length,
 					  tsn_config->vid | tsn_config->pcp << VLAN_PCP_SHIFT,
