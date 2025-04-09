@@ -21,6 +21,8 @@
 #include <linux/if_packet.h>
 #include <linux/if_vlan.h>
 
+#include "app_config.h"
+
 #include "config.h"
 #include "log.h"
 #include "net.h"
@@ -48,8 +50,10 @@ static void tsn_initialize_frames(struct thread_context *thread_context, unsigne
 		 * In case both AF_XDP and Tx Launch Time are enabled the payload starts at:
 		 *   frame_data + sizeof(struct xsk_tx_metadata)
 		 */
+#ifdef HAVE_XDP_TX_TIME
 		if (tsn_config->xdp_enabled && tsn_config->tx_time_enabled)
 			frame += sizeof(struct xsk_tx_metadata);
+#endif
 
 		initialize_profinet_frame(tsn_config->security_mode, frame, MAX_FRAME_SIZE, source,
 					  destination, tsn_config->payload_pattern,

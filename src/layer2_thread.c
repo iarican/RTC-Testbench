@@ -21,6 +21,8 @@
 
 #include <sys/socket.h>
 
+#include "app_config.h"
+
 #include "config.h"
 #include "layer2_thread.h"
 #include "log.h"
@@ -55,8 +57,10 @@ static void generic_l2_initialize_frame(struct thread_context *thread_context,
 	 *   frame_data + sizeof(struct xsk_tx_metadata)
 	 */
 
+#ifdef HAVE_XDP_TX_TIME
 	if (l2_config->xdp_enabled && l2_config->tx_time_enabled)
 		frame_data += sizeof(struct xsk_tx_metadata);
+#endif
 
 	eth = (struct vlan_ethernet_header *)frame_data;
 	l2 = (struct generic_l2_header *)(frame_data + sizeof(*eth));
