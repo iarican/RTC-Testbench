@@ -241,8 +241,17 @@ struct xdp_socket *xdp_open_socket(const char *interface, const char *xdp_progra
 		goto err3;
 	}
 
-	for (i = 0; i < XSK_RING_PROD__DEFAULT_NUM_DESCS; i++)
-		*xsk_ring_prod__fill_addr(&xsk->umem.fq, idx++) = i * XDP_FRAME_SIZE;
+	for (i = 0; i < XSK_RING_PROD__DEFAULT_NUM_DESCS; i++) {
+		*xsk_ring_prod__fill_addr(&xsk->umem.fq, idx) = i * XDP_FRAME_SIZE;
+
+		/* Reserve space for Tx Meta Data on retransmit. */
+#ifdef HAVE_XDP_TX_TIME
+		if (xsk->tx_time_mode)
+			*xsk_ring_prod__fill_addr(&xsk->umem.fq, idx) +=
+				sizeof(struct xsk_tx_metadata);
+#endif
+		idx++;
+	}
 
 	xsk_ring_prod__submit(&xsk->umem.fq, XSK_RING_PROD__DEFAULT_NUM_DESCS);
 
@@ -377,7 +386,7 @@ void xdp_complete_tx(struct xdp_socket *xsk)
 }
 
 static unsigned char *xdp_prepare_tx_desc(struct xdp_socket *xsk, struct xdp_desc *tx_desc,
-					  const struct xdp_tx_time *tx_time, int i)
+					  const struct xdp_tx_time *tx_time, int i, bool tx)
 {
 	unsigned char *data;
 
@@ -388,7 +397,8 @@ static unsigned char *xdp_prepare_tx_desc(struct xdp_socket *xsk, struct xdp_des
 		uint64_t time;
 
 		/* Reserve meta data space for Tx Time. */
-		tx_desc->addr += sizeof(struct xsk_tx_metadata);
+		if (tx)
+			tx_desc->addr += sizeof(struct xsk_tx_metadata);
 
 		data = xsk_umem__get_data(xsk->umem.buffer, tx_desc->addr);
 		meta = (struct xsk_tx_metadata *)(data - sizeof(struct xsk_tx_metadata));
@@ -449,7 +459,7 @@ void xdp_gen_and_send_frames(struct xdp_socket *xsk, const struct xdp_gen_config
 				     XSK_RING_PROD__DEFAULT_NUM_DESCS;
 
 		/* Get frame and prepare it */
-		data = xdp_prepare_tx_desc(xsk, tx_desc, xdp->tx_time, i);
+		data = xdp_prepare_tx_desc(xsk, tx_desc, xdp->tx_time, i, true);
 
 		frame_config.mode = xdp->mode;
 		frame_config.security_context = xdp->security_context;
@@ -559,17 +569,9 @@ unsigned int xdp_receive_frames(struct xdp_socket *xsk, size_t frame_length, boo
 			tx_desc->addr = orig;
 			tx_desc->len = frame_length;
 
-#ifdef HAVE_XDP_TX_TIME
-			if (xsk->tx_time_mode) {
-				/* Make room for Tx Meta Data */
-				memmove(packet + sizeof(struct xsk_tx_metadata), packet, len);
-				memset(packet, '\0', sizeof(struct xsk_tx_metadata));
-				packet += sizeof(struct xsk_tx_metadata);
-
-				/* Prepare tx desc with Tx Time */
-				xdp_prepare_tx_desc(xsk, tx_desc, tx_time, i);
-			}
-#endif
+			/* Prepare tx desc with Tx Time */
+			if (xsk->tx_time_mode)
+				xdp_prepare_tx_desc(xsk, tx_desc, tx_time, i, false);
 		} else {
 			/* Move buffer back to fill queue */
 			*xsk_ring_prod__fill_addr(&xsk->umem.fq, idx_fq++) = orig;
