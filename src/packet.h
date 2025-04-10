@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (C) 2024 Linutronix GmbH
+ * Copyright (C) 2024-2025 Linutronix GmbH
  * Author Kurt Kanzenbach <kurt@linutronix.de>
  */
 
@@ -37,7 +37,6 @@ struct packet_send_request {
 	unsigned char *frame_data;
 	size_t num_frames;
 	size_t frame_length;
-	uint64_t wakeup_time;
 	uint64_t duration;
 	uint64_t tx_time_offset;
 	uint32_t meta_data_offset;

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-2-Clause
 /*
- * Copyright (C) 2020-2024 Linutronix GmbH
+ * Copyright (C) 2020-2025 Linutronix GmbH
  * Author Kurt Kanzenbach <kurt@linutronix.de>
  */
 
@@ -100,7 +100,6 @@ static int lldp_send_messages(struct thread_context *thread_context, int socket_
 		.frame_data = frame_data,
 		.num_frames = num_frames,
 		.frame_length = lldp_config->frame_length,
-		.wakeup_time = 0,
 		.duration = 0,
 		.tx_time_offset = 0,
 		.meta_data_offset = thread_context->meta_data_offset,

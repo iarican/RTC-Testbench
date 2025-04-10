@@ -57,7 +57,6 @@ static int rta_send_messages(struct thread_context *thread_context, int socket_f
 		.frame_data = frame_data,
 		.num_frames = num_frames,
 		.frame_length = rta_config->frame_length,
-		.wakeup_time = 0,
 		.duration = 0,
 		.tx_time_offset = 0,
 		.meta_data_offset = thread_context->meta_data_offset,

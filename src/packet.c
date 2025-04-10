@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-2-Clause
 /*
- * Copyright (C) 2024 Linutronix GmbH
+ * Copyright (C) 2024-2025 Linutronix GmbH
  * Author Kurt Kanzenbach <kurt@linutronix.de>
  */
 
@@ -139,7 +139,7 @@ int packet_send_messages(struct packet_context *context, struct packet_send_requ
 							     context->num_frames_per_cycle);
 
 				tx_time = tx_time_get_frame_tx_time(
-					send_req->wakeup_time, sequence_counter, send_req->duration,
+					sequence_counter, send_req->duration,
 					context->num_frames_per_cycle, send_req->tx_time_offset,
 					send_req->traffic_class);
 

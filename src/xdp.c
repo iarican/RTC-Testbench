@@ -395,8 +395,7 @@ static unsigned char *xdp_prepare_tx_desc(struct xdp_socket *xsk, struct xdp_des
 
 		/* Add Tx Launch Time to Tx desc. */
 		meta->flags = XDP_TXMD_FLAGS_LAUNCH_TIME;
-		time = tx_time_get_frame_tx_time(tx_time->wakeup_time,
-						 tx_time->sequence_counter_begin + i,
+		time = tx_time_get_frame_tx_time(tx_time->sequence_counter_begin + i,
 						 tx_time->duration, tx_time->num_frames_per_cycle,
 						 tx_time->tx_time_offset, tx_time->traffic_class);
 		meta->request.launch_time = time;

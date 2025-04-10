@@ -54,7 +54,6 @@ struct xdp_socket {
 
 struct xdp_tx_time {
 	const char *traffic_class;
-	uint64_t wakeup_time;
 	uint64_t sequence_counter_begin;
 	uint64_t duration;
 	uint64_t tx_time_offset;
