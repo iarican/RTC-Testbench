@@ -490,7 +490,7 @@ void xdp_gen_and_send_frames(struct xdp_socket *xsk, const struct xdp_gen_config
 
 unsigned int xdp_receive_frames(struct xdp_socket *xsk, size_t frame_length, bool mirror_enabled,
 				int (*receive_function)(void *data, unsigned char *, size_t),
-				void *data)
+				void *data, const struct xdp_tx_time *tx_time)
 {
 	uint32_t idx_rx = 0, idx_tx = 0, idx_fq = 0, len;
 	unsigned int received, i;
@@ -553,9 +553,23 @@ unsigned int xdp_receive_frames(struct xdp_socket *xsk, size_t frame_length, boo
 		packet = xsk_umem__get_data(xsk->umem.buffer, addr);
 
 		if (mirror_enabled) {
+			struct xdp_desc *tx_desc = xsk_ring_prod__tx_desc(&xsk->tx, idx_tx++);
+
 			/* Store received frame in Tx ring */
-			xsk_ring_prod__tx_desc(&xsk->tx, idx_tx)->addr = orig;
-			xsk_ring_prod__tx_desc(&xsk->tx, idx_tx++)->len = frame_length;
+			tx_desc->addr = orig;
+			tx_desc->len = frame_length;
+
+#ifdef HAVE_XDP_TX_TIME
+			if (xsk->tx_time_mode) {
+				/* Make room for Tx Meta Data */
+				memmove(packet + sizeof(struct xsk_tx_metadata), packet, len);
+				memset(packet, '\0', sizeof(struct xsk_tx_metadata));
+				packet += sizeof(struct xsk_tx_metadata);
+
+				/* Prepare tx desc with Tx Time */
+				xdp_prepare_tx_desc(xsk, tx_desc, tx_time, i);
+			}
+#endif
 		} else {
 			/* Move buffer back to fill queue */
 			*xsk_ring_prod__fill_addr(&xsk->umem.fq, idx_fq++) = orig;

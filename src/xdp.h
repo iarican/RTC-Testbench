@@ -84,6 +84,6 @@ void xdp_complete_tx(struct xdp_socket *xsk);
 void xdp_gen_and_send_frames(struct xdp_socket *xsk, const struct xdp_gen_config *xdp);
 unsigned int xdp_receive_frames(struct xdp_socket *xsk, size_t frame_length, bool mirror_enabled,
 				int (*receive_function)(void *data, unsigned char *, size_t),
-				void *data);
+				void *data, const struct xdp_tx_time *tx_time);
 
 #endif /* _XDP_H_ */

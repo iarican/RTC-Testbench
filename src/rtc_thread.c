@@ -503,7 +503,7 @@ static void *rtc_xdp_rx_thread_routine(void *data)
 
 		pthread_mutex_lock(&thread_context->xdp_data_mutex);
 		received = xdp_receive_frames(xsk, frame_length, mirror_enabled,
-					      receive_profinet_frame, thread_context);
+					      receive_profinet_frame, thread_context, NULL);
 		thread_context->received_frames = received;
 		pthread_mutex_unlock(&thread_context->xdp_data_mutex);
 	}

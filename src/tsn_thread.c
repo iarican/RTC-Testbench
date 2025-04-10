@@ -524,6 +524,8 @@ static void *tsn_xdp_rx_thread_routine(void *data)
 	const size_t frame_length = tsn_config->frame_length;
 	struct xdp_socket *xsk = thread_context->xsk;
 	struct timespec wakeup_time;
+	uint32_t link_speed;
+	uint64_t duration;
 	int ret;
 
 	prepare_openssl(thread_context->rx_security_context);
@@ -535,7 +537,23 @@ static void *tsn_xdp_rx_thread_routine(void *data)
 		return NULL;
 	}
 
+	ret = get_interface_link_speed(tsn_config->interface, &link_speed);
+	if (ret) {
+		log_message(LOG_LEVEL_ERROR, "%sRx: Failed to get link speed!\n",
+			    thread_context->traffic_class);
+		return NULL;
+	}
+
+	duration = tx_time_get_frame_duration(link_speed, tsn_config->frame_length);
+
 	while (!thread_context->stop) {
+		struct xdp_tx_time tx_time = {
+			.tx_time_offset = tsn_config->tx_time_offset_ns,
+			.duration = duration,
+			.num_frames_per_cycle = tsn_config->num_frames_per_cycle,
+			.sequence_counter_begin = 0,
+			.traffic_class = thread_context->traffic_class,
+		};
 		unsigned int received;
 
 		/* Wait until next period */
@@ -554,7 +572,7 @@ static void *tsn_xdp_rx_thread_routine(void *data)
 
 		pthread_mutex_lock(&thread_context->xdp_data_mutex);
 		received = xdp_receive_frames(xsk, frame_length, mirror_enabled,
-					      receive_profinet_frame, thread_context);
+					      receive_profinet_frame, thread_context, &tx_time);
 		thread_context->received_frames = received;
 		pthread_mutex_unlock(&thread_context->xdp_data_mutex);
 	}
@@ -620,7 +638,7 @@ int tsn_threads_create(struct thread_context *thread_context)
 			tsn_config->interface, app_config.application_xdp_program,
 			tsn_config->rx_queue, tsn_config->xdp_skb_mode, tsn_config->xdp_zc_mode,
 			tsn_config->xdp_wakeup_mode, tsn_config->xdp_busy_poll_mode,
-			tsn_config->tx_time_enabled && !tsn_config->rx_mirror_enabled);
+			tsn_config->tx_time_enabled);
 		if (!thread_context->xsk) {
 			fprintf(stderr, "Failed to create Tsn Xdp socket!\n");
 			ret = -ENOMEM;

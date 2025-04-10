@@ -573,6 +573,8 @@ static void *generic_l2_xdp_rx_thread_routine(void *data)
 	const size_t frame_length = l2_config->frame_length;
 	struct xdp_socket *xsk = thread_context->xsk;
 	struct timespec wakeup_time;
+	uint32_t link_speed;
+	uint64_t duration;
 	int ret;
 
 	ret = get_thread_start_time(app_config.application_rx_base_offset_ns, &wakeup_time);
@@ -583,7 +585,22 @@ static void *generic_l2_xdp_rx_thread_routine(void *data)
 		return NULL;
 	}
 
+	ret = get_interface_link_speed(l2_config->interface, &link_speed);
+	if (ret) {
+		log_message(LOG_LEVEL_ERROR, "GenericL2Rx: Failed to get link speed!\n");
+		return NULL;
+	}
+
+	duration = tx_time_get_frame_duration(link_speed, l2_config->frame_length);
+
 	while (!thread_context->stop) {
+		struct xdp_tx_time tx_time = {
+			.tx_time_offset = l2_config->tx_time_offset_ns,
+			.duration = duration,
+			.num_frames_per_cycle = l2_config->num_frames_per_cycle,
+			.sequence_counter_begin = 0,
+			.traffic_class = thread_context->traffic_class,
+		};
 		unsigned int received;
 
 		/* Wait until next period */
@@ -602,7 +619,7 @@ static void *generic_l2_xdp_rx_thread_routine(void *data)
 
 		pthread_mutex_lock(&thread_context->xdp_data_mutex);
 		received = xdp_receive_frames(xsk, frame_length, mirror_enabled,
-					      generic_l2_rx_frame, thread_context);
+					      generic_l2_rx_frame, thread_context, &tx_time);
 		thread_context->received_frames = received;
 		pthread_mutex_unlock(&thread_context->xdp_data_mutex);
 	}
@@ -654,11 +671,11 @@ struct thread_context *generic_l2_threads_create(void)
 	/* For XDP a AF_XDP socket is allocated. Otherwise a Linux raw socket is used. */
 	if (l2_config->xdp_enabled) {
 		thread_context->socket_fd = 0;
-		thread_context->xsk = xdp_open_socket(
-			l2_config->interface, app_config.application_xdp_program,
-			l2_config->rx_queue, l2_config->xdp_skb_mode, l2_config->xdp_zc_mode,
-			l2_config->xdp_wakeup_mode, l2_config->xdp_busy_poll_mode,
-			l2_config->tx_time_enabled && !l2_config->rx_mirror_enabled);
+		thread_context->xsk =
+			xdp_open_socket(l2_config->interface, app_config.application_xdp_program,
+					l2_config->rx_queue, l2_config->xdp_skb_mode,
+					l2_config->xdp_zc_mode, l2_config->xdp_wakeup_mode,
+					l2_config->xdp_busy_poll_mode, l2_config->tx_time_enabled);
 		if (!thread_context->xsk) {
 			fprintf(stderr, "Failed to create GenericL2 Xdp socket!\n");
 			goto err_socket;
