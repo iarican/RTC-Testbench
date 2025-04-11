@@ -16,10 +16,6 @@ include(GNUInstallDirs)
 
 find_package(PkgConfig REQUIRED)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wshadow -std=gnu99 -Wvla")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wshadow -std=c++14 -Wvla")
-add_definitions(-D_GNU_SOURCE)
-
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
@@ -86,6 +82,12 @@ if (WITH_MQTT)
   target_include_directories(reference PUBLIC ${MOSQUITTO_INCLUDE_DIRS})
   target_include_directories(mirror PUBLIC ${MOSQUITTO_INCLUDE_DIRS})
 endif()
+
+target_compile_options(reference PRIVATE -Wall -Wshadow -std=gnu99 -Wvla)
+target_compile_options(mirror PRIVATE -Wall -Wshadow -std=gnu99 -Wvla)
+
+target_compile_definitions(reference PRIVATE -D_GNU_SOURCE)
+target_compile_definitions(mirror PRIVATE -D_GNU_SOURCE)
 
 target_link_libraries(reference Threads::Threads)
 target_link_libraries(reference ${YAML_LIBRARIES})
