@@ -89,6 +89,15 @@ target_compile_options(mirror PRIVATE -Wall -Wshadow -std=gnu99 -Wvla)
 target_compile_definitions(reference PRIVATE -D_GNU_SOURCE)
 target_compile_definitions(mirror PRIVATE -D_GNU_SOURCE)
 
+option(WITH_ASAN, "Build with AddressSanitizer for debugging" OFF)
+if (WITH_ASAN)
+  target_compile_options(reference PRIVATE -fsanitize=address)
+  target_compile_options(mirror PRIVATE -fsanitize=address)
+
+  target_link_options(reference PRIVATE -fsanitize=address)
+  target_link_options(mirror PRIVATE -fsanitize=address)
+endif()
+
 target_link_libraries(reference Threads::Threads)
 target_link_libraries(reference ${YAML_LIBRARIES})
 target_link_libraries(reference ${LIBBPF_LIBRARIES})
