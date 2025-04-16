@@ -1,7 +1,7 @@
 #
 # SPDX-License-Identifier: BSD-2-Clause
 #
-# Copyright (C) 2023-2024 Linutronix GmbH
+# Copyright (C) 2023-2025 Linutronix GmbH
 # Author Kurt Kanzenbach <kurt@linutronix.de>
 #
 FROM debian:bookworm
@@ -23,7 +23,8 @@ ENV LC_ALL en_US.UTF-8
 RUN apt install -y build-essential clang llvm cmake pkg-config
 RUN apt install -y libbpf-dev libyaml-dev libc6-dev rt-tests ethtool iproute2
 RUN apt install -y iperf3 linuxptp libxdp-dev libssl-dev libmosquitto-dev
-RUN apt install -y git
+RUN apt install -y git emacs-nox vim-nox net-tools iputils-ping
+RUN apt install -y tcpdump bpftool xdp-tools
 
 # Install RTC Testbench
 WORKDIR /root
