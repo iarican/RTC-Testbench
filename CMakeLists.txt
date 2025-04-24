@@ -161,6 +161,7 @@ add_xdp_prog(xdp_kern_profinet_vid200)
 add_xdp_prog(xdp_kern_opcua_vid200)
 add_xdp_prog(xdp_kern_opcua_vid300)
 add_xdp_prog(xdp_kern_avtp_vid400)
+add_xdp_prog(xdp_kern_profinet_veth_dispatch)
 
 install(TARGETS reference DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT binaries)
 install(TARGETS mirror DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT binaries)
