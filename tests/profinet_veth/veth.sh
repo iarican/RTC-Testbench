@@ -19,8 +19,8 @@ ip link add veth1 type veth peer name veth1tb
 #
 # Setup MAC addresses.
 #
-HOSTNAME=`hostname`
-if [ "${HOSTNAME}" = "bpc1" ] ; then
+HOSTNAME=$(hostname)
+if [ "${HOSTNAME}" = "bpc1" ]; then
   ifconfig veth0tb hw ether 5e:a7:0c:3f:e4:a9
   ifconfig veth1tb hw ether d2:4c:c5:e2:f7:b7
 else
@@ -37,8 +37,8 @@ ip link set veth1 up
 #
 # Move vethXtb to container network namespaces
 #
-NETNS1=`lsns -t net | tail -n1 | awk '{ print $4 }'`
-NETNS2=`lsns -t net | tail -n2 | head -n 1 | awk '{ print $4 }'`
+NETNS1=$(lsns -t net | tail -n1 | awk '{ print $4 }')
+NETNS2=$(lsns -t net | tail -n2 | head -n 1 | awk '{ print $4 }')
 ip link set veth0tb netns ${NETNS1}
 ip link set veth1tb netns ${NETNS2}
 
@@ -72,7 +72,7 @@ bridge vlan add dev veth1 vid 200
 #
 # Setup MAC addresses.
 #
-if [ "${HOSTNAME}" = "bpc1" ] ; then
+if [ "${HOSTNAME}" = "bpc1" ]; then
   ifconfig br0 hw ether d6:96:12:ef:d6:77
 else
   ifconfig br0 hw ether d6:96:12:ef:d6:78
