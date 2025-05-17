@@ -13,6 +13,9 @@
 
 set -e
 
+source ../../../lib/common.sh
+source ../../../lib/stmmac.sh
+
 #
 # Command line arguments.
 #
@@ -24,26 +27,11 @@ BASETIME=$3
 [ -z $CYCLETIME_NS ] && CYCLETIME_NS="1000000"                  # default: 1ms
 [ -z $BASETIME ] && BASETIME=$(date '+%s000000000' -d '60 sec') # default: now + 60s
 
-# Load needed kernel modules
-modprobe sch_taprio || true
+load_kernel_modules
 
-#
-# Enable NAPI threaded mode: This allows the NAPI processing being executed in
-# dedicated kernel threads instead of using NET_RX soft irq. Using these allows
-# to prioritize the Rx processing in accordance to use case.
-#
-echo 1 >/sys/class/net/${INTERFACE}/threaded
+setup_threaded_napi "${INTERFACE}"
 
-#
-# Configure the interface: Tailor IRQ settings towards lower cycle times,
-# e.g. 500us.
-#
-ethtool --per-queue ${INTERFACE} queue_mask 0xff --coalesce tx-usecs 500 tx-frames 16
-
-#
-# Disable VLAN Rx offload.
-#
-ethtool -K ${INTERFACE} rx-vlan-offload off
+stmmac_start "${INTERFACE}"
 
 #
 # Qbv configuration.
@@ -102,37 +90,11 @@ ip link set ${INTERFACE}.400 up
 # PCP 6 - Queue 7 - TSN HIGH
 # PCP 7 - Queue 4 - PTP/LLDP
 #
-tc qdisc add dev ${INTERFACE} ingress
-tc filter add dev ${INTERFACE} parent ffff: protocol 802.1Q flower vlan_prio 0 hw_tc 0
-tc filter add dev ${INTERFACE} parent ffff: protocol 802.1Q flower vlan_prio 1 hw_tc 1
-tc filter add dev ${INTERFACE} parent ffff: protocol 802.1Q flower vlan_prio 2 hw_tc 2
-tc filter add dev ${INTERFACE} parent ffff: protocol 802.1Q flower vlan_prio 3 hw_tc 3
-tc filter add dev ${INTERFACE} parent ffff: protocol 802.1Q flower vlan_prio 4 hw_tc 5
-tc filter add dev ${INTERFACE} parent ffff: protocol 802.1Q flower vlan_prio 5 hw_tc 6
-tc filter add dev ${INTERFACE} parent ffff: protocol 802.1Q flower vlan_prio 6 hw_tc 7
-tc filter add dev ${INTERFACE} parent ffff: protocol 802.1Q flower vlan_prio 7 hw_tc 4
+RXQUEUES=(4 7 6 5 3 2 1 0 4 4)
+stmmac_rx_queues_assign "${INTERFACE}" RXQUEUES
 
-#
-# PTP and LLDP are transmitted untagged. Steer them via EtherType.
-#
-tc filter add dev ${INTERFACE} parent ffff: protocol 0x88f7 flower hw_tc 4
-tc filter add dev ${INTERFACE} parent ffff: protocol 0x88cc flower hw_tc 4
+stmmac_end "${INTERFACE}"
 
-#
-# Increase IRQ thread priorities. By default, every IRQ thread has priority 50.
-#
-IRQTHREADS=$(ps aux | grep irq | grep ${INTERFACE} | awk '{ print $2; }')
-for task in ${IRQTHREADS}; do
-  chrt -p -f 85 $task
-done
-
-#
-# Increase NAPI thread priorities. By default, every NAPI thread uses
-# SCHED_OTHER.
-#
-NAPITHREADS=$(ps aux | grep napi | grep ${INTERFACE} | awk '{ print $2; }')
-for task in ${NAPITHREADS}; do
-  chrt -p -f 85 $task
-done
+setup_irqs "${INTERFACE}"
 
 exit 0
