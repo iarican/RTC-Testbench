@@ -570,12 +570,13 @@ void prepare_openssl(struct security_context *context)
 
 int get_thread_start_time(uint64_t base_offset, struct timespec *wakeup_time)
 {
+	const uint64_t base_start_offset = app_config.application_base_start_offset_ns;
 	const uint64_t base_start_time = app_config.application_base_start_time_ns;
 	const clockid_t profinet_clock_id = app_config.application_clock_id;
 	int ret = 0;
 
 	if (base_start_time)
-		ns_to_ts(base_start_time + base_offset, wakeup_time);
+		ns_to_ts(base_start_time + base_start_offset + base_offset, wakeup_time);
 	else
 		ret = clock_gettime(profinet_clock_id, wakeup_time);
 

@@ -83,6 +83,7 @@ struct application_config {
 	clockid_t application_clock_id;
 	uint64_t application_base_cycle_time_ns;
 	uint64_t application_base_start_time_ns;
+	uint64_t application_base_start_offset_ns;
 	uint64_t application_tx_base_offset_ns;
 	uint64_t application_rx_base_offset_ns;
 	char *application_xdp_program;

@@ -212,6 +212,8 @@ int config_read_from_file(const char *config_file)
 						application_base_cycle_time_ns);
 			CONFIG_STORE_TIME_PARAM(ApplicationBaseStartTimeNS,
 						application_base_start_time_ns);
+			CONFIG_STORE_TIME_PARAM(ApplicationBaseStartOffsetNS,
+						application_base_start_offset_ns);
 			CONFIG_STORE_TIME_PARAM(ApplicationTxBaseOffsetNS,
 						application_tx_base_offset_ns);
 			CONFIG_STORE_TIME_PARAM(ApplicationRxBaseOffsetNS,
@@ -518,6 +520,8 @@ void config_print_values(void)
 	       app_config.application_base_cycle_time_ns);
 	printf("ApplicationBaseStartTimeNS=%" PRIu64 "\n",
 	       app_config.application_base_start_time_ns);
+	printf("ApplicationBaseStartOffsetNS=%" PRIu64 "\n",
+	       app_config.application_base_start_offset_ns);
 	printf("ApplicationTxBaseOffsetNS=%" PRIu64 "\n", app_config.application_tx_base_offset_ns);
 	printf("ApplicationRxBaseOffsetNS=%" PRIu64 "\n", app_config.application_rx_base_offset_ns);
 	printf("ApplicationXdpProgram=%s\n", app_config.application_xdp_program);
@@ -861,6 +865,7 @@ int config_set_defaults(bool mirror_enabled)
 	app_config.application_clock_id = CLOCK_TAI;
 	app_config.application_base_cycle_time_ns = 500000;
 	app_config.application_base_start_time_ns = (current.tv_sec + 30) * NSEC_PER_SEC;
+	app_config.application_base_start_offset_ns = 0;
 	app_config.application_tx_base_offset_ns = 400000;
 	app_config.application_rx_base_offset_ns = 200000;
 	app_config.application_xdp_program = NULL;
