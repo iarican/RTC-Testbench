@@ -91,7 +91,6 @@ The following list contains ideas for further development:
 - Rework busy polling configuration
 - Add configurations for other hardware platforms (hybrid!) and NIC(s)
 - Add integration with `ClockManager`
-- Test (virtual) container networking
 - Package for Debian
 
 ## Documentation
