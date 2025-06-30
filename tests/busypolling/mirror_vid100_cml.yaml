@@ -32,10 +32,10 @@ RTC:
   RtcSocketPriority: 7
   RtcTxThreadPriority: 98
   RtcRxThreadPriority: 98
-  RtcTxThreadCpu: 0
-  RtcRxThreadCpu: 0
-  RtcInterface: enp3s0
-  RtcDestination: a8:74:1d:9d:36:14
+  RtcTxThreadCpu: 2
+  RtcRxThreadCpu: 2
+  RtcInterface: enp171s0
+  RtcDestination: 80:6d:97:5b:72:6f
 Log:
   LogThreadPriority: 1
   LogThreadCpu: 7
