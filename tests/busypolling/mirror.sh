@@ -11,11 +11,11 @@ set -e
 cd "$(dirname "$0")"
 
 # Start PTP
-../../scripts/ptp.sh enp3s0
+../../scripts/ptp.sh enp171s0
 sleep 30
 
 # Configure flow
-./flow_cml.sh enp3s0
+./flow_cml.sh enp171s0
 sleep 30
 
 # Start one instance of mirror application
