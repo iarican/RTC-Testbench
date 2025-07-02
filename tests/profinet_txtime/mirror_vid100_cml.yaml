@@ -33,10 +33,10 @@ TSNHigh:
   TsnHighSocketPriority: 7
   TsnHighTxThreadPriority: 98
   TsnHighRxThreadPriority: 98
-  TsnHighTxThreadCpu: 0
-  TsnHighRxThreadCpu: 0
-  TsnHighInterface: enp3s0
-  TsnHighDestination: a8:74:1d:9d:36:14
+  TsnHighTxThreadCpu: 2
+  TsnHighRxThreadCpu: 2
+  TsnHighInterface: enp171s0
+  TsnHighDestination: 80:6d:97:5b:72:6f
 TSNLow:
   TsnLowEnabled: true
   TsnLowXdpEnabled: true
@@ -55,10 +55,10 @@ TSNLow:
   TsnLowSocketPriority: 6
   TsnLowTxThreadPriority: 98
   TsnLowRxThreadPriority: 98
-  TsnLowTxThreadCpu: 1
-  TsnLowRxThreadCpu: 1
-  TsnLowInterface: enp3s0
-  TsnLowDestination: a8:74:1d:9d:36:14
+  TsnLowTxThreadCpu: 2
+  TsnLowRxThreadCpu: 2
+  TsnLowInterface: enp171s0
+  TsnLowDestination: 80:6d:97:5b:72:6f
 Log:
   LogThreadPriority: 1
   LogThreadCpu: 7
