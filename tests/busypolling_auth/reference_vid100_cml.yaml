@@ -27,12 +27,10 @@ RTC:
   RtcPayloadPattern: |
     RtcPayloadPattern
   RtcFrameLength: 128
-  RtcRxSecurityMode: AO
-  RtcRxSecurityAlgorithm: AES256-GCM
-  RtcRxSecurityKey: 01234567890123456789012345678901
-  RtcTxSecurityMode: AO
-  RtcTxSecurityAlgorithm: AES256-GCM
-  RtcTxSecurityKey: 01234567890123456789012345678901
+  RtcSecurityMode: AO
+  RtcSecurityAlgorithm: AES256-GCM
+  RtcSecurityKey: 01234567890123456789012345678901
+  RtcSecurityIvPrefix: 012345
   RtcRxQueue: 0
   RtcTxQueue: 0
   RtcSocketPriority: 7
