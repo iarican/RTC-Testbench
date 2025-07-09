@@ -38,8 +38,8 @@ RTC:
   RtcRxThreadPriority: 98
   RtcTxThreadCpu: 2
   RtcRxThreadCpu: 2
-  RtcInterface: enp171s0
-  RtcDestination: 80:6d:97:5b:71:d0
+  RtcInterface: 
+  RtcDestination: 
 Log:
   LogThreadPriority: 1
   LogThreadCpu: 7
